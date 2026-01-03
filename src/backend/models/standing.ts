@@ -6,6 +6,11 @@ export interface Standing {
   losses: number;
   ties: number;
   gamesBack: number;
+  pct?: number | null;
+  homeRecord?: string | null;
+  awayRecord?: string | null;
+  last10?: string | null;
+  league?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,5 +22,10 @@ export interface StandingInput {
   losses: number;
   ties: number;
   gamesBack: number;
+  pct?: number | null;
+  homeRecord?: string | null;
+  awayRecord?: string | null;
+  last10?: string | null;
+  league?: string | null;
 }
 

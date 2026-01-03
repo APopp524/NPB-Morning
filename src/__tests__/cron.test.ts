@@ -44,19 +44,13 @@ describe('Cron Route', () => {
   beforeEach(() => {
     fastify = Fastify({ logger: false });
     mockProvider = {
-      fetchTeams: vi.fn().mockResolvedValue(mockTeams),
       fetchGames: vi.fn().mockResolvedValue(mockGames),
       fetchStandings: vi.fn().mockResolvedValue(mockStandings),
+      fetchStandingsForBothLeagues: vi.fn().mockResolvedValue(mockStandings),
     };
 
-    vi.mocked(teamsDb.upsertTeams).mockResolvedValue(
-      mockTeams.map((t, i) => ({
-        id: `team-${i}`,
-        ...t,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }))
-    );
+    // Mock countTeams to return 12 (teams validation at startup)
+    vi.mocked(teamsDb.countTeams).mockResolvedValue(12);
 
     vi.mocked(gamesDb.upsertGames).mockResolvedValue(
       mockGames.map((g, i) => ({
@@ -88,13 +82,20 @@ describe('Cron Route', () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body.success).toBe(true);
-    expect(body.counts.teams).toBe(mockTeams.length);
     expect(body.counts.games).toBe(mockGames.length);
     expect(body.counts.standings).toBe(mockStandings.length);
 
-    expect(mockProvider.fetchTeams).toHaveBeenCalledOnce();
+    // Teams are NOT fetched by cron (they are seeded via migration)
     expect(mockProvider.fetchGames).toHaveBeenCalledOnce();
-    expect(mockProvider.fetchStandings).toHaveBeenCalledOnce();
+    // Cron route uses fetchStandingsForBothLeagues if available
+    if ('fetchStandingsForBothLeagues' in mockProvider) {
+      expect((mockProvider as any).fetchStandingsForBothLeagues).toHaveBeenCalledOnce();
+    } else {
+      expect(mockProvider.fetchStandings).toHaveBeenCalledTimes(2); // Once per league
+    }
+    
+    // Teams validation happens at startup
+    expect(teamsDb.countTeams).toHaveBeenCalled();
   });
 
   it('should use custom date from query', async () => {
@@ -127,13 +128,27 @@ describe('Cron Route', () => {
     const body = JSON.parse(response.body);
     expect(body.season).toBe(customSeason);
 
-    expect(mockProvider.fetchStandings).toHaveBeenCalledWith(customSeason);
+    // Cron route uses fetchStandingsForBothLeagues if available
+    if ('fetchStandingsForBothLeagues' in mockProvider) {
+      expect((mockProvider as any).fetchStandingsForBothLeagues).toHaveBeenCalledWith(customSeason);
+    } else {
+      expect(mockProvider.fetchStandings).toHaveBeenCalledWith(customSeason, 'central');
+      expect(mockProvider.fetchStandings).toHaveBeenCalledWith(customSeason, 'pacific');
+    }
+  });
+
+  it('should fail at startup if teams are missing', async () => {
+    // Mock countTeams to return less than 12 (should fail at startup)
+    vi.mocked(teamsDb.countTeams).mockResolvedValue(0);
+
+    await expect(registerCronRoutes(fastify, mockProvider)).rejects.toThrow(
+      /Expected 12 teams/
+    );
   });
 
   it('should handle provider errors gracefully', async () => {
     const errorProvider: NPBDataProvider = {
-      fetchTeams: vi.fn().mockRejectedValue(new Error('Provider error')),
-      fetchGames: vi.fn().mockResolvedValue([]),
+      fetchGames: vi.fn().mockRejectedValue(new Error('Provider error')),
       fetchStandings: vi.fn().mockResolvedValue([]),
     };
 

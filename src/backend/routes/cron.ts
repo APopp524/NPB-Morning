@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { NPBDataProvider } from '../providers/types';
-import { upsertTeams } from '../db/teams';
+import { countTeams } from '../db/teams';
 import { upsertGames } from '../db/games';
 import { upsertStandings } from '../db/standings';
 
@@ -13,6 +13,26 @@ export async function registerCronRoutes(
   fastify: FastifyInstance,
   provider: NPBDataProvider
 ) {
+  // Guard: Validate teams exist before registering routes
+  // Teams are static configuration data seeded via migration.
+  // Cron assumes teams already exist and will fail loudly if they do not.
+  try {
+    const teamCount = await countTeams();
+    if (teamCount !== 12) {
+      const error = new Error(
+        `FATAL: Expected 12 teams in database but found ${teamCount}. ` +
+          `Teams must be seeded via migration (supabase/migrations/002_seed_teams.sql) before cron can run.`
+      );
+      fastify.log.error(error);
+      throw error;
+    }
+    fastify.log.info('✓ Teams validation passed: 12 teams found in database');
+  } catch (error) {
+    // If validation fails, we want to fail hard at startup
+    fastify.log.error('FATAL: Teams validation failed. Server will not start.');
+    throw error;
+  }
+
   fastify.get(
     '/cron/daily',
     async (
@@ -40,15 +60,19 @@ export async function registerCronRoutes(
             ? Number(request.query.season)
             : new Date().getFullYear();
 
-        // Fetch data from provider (date is now ISO string)
-        const [teams, games, standings] = await Promise.all([
-          provider.fetchTeams(),
+        // Fetch data from provider
+        // NOTE: Teams are NOT fetched here. Teams are static configuration data
+        // seeded via migration. Cron assumes teams already exist.
+        const [games, standings] = await Promise.all([
           provider.fetchGames(dateStr),
-          provider.fetchStandings(season),
+          // Use fetchStandingsForBothLeagues if available, otherwise fetch both leagues separately
+          'fetchStandingsForBothLeagues' in provider
+            ? (provider as any).fetchStandingsForBothLeagues(season)
+            : Promise.all([
+                provider.fetchStandings(season, 'central'),
+                provider.fetchStandings(season, 'pacific'),
+              ]).then(results => results.flat()),
         ]);
-
-        // Upsert teams first (games and standings depend on teams)
-        const upsertedTeams = await upsertTeams(teams);
 
         // Upsert games and standings
         const [upsertedGames, upsertedStandings] = await Promise.all([
@@ -61,7 +85,6 @@ export async function registerCronRoutes(
           date: dateStr, // Already in ISO format (YYYY-MM-DD)
           season,
           counts: {
-            teams: upsertedTeams.length,
             games: upsertedGames.length,
             standings: upsertedStandings.length,
           },
