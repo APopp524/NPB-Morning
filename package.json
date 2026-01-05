@@ -10,7 +10,7 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "debug:standings": "tsx src/scripts/debug-serpapi-standings.ts",
-    "run:standings": "tsx src/scripts/run-standings.ts"
+    "standings:run": "tsx src/scripts/run-standings.ts"
   },
   "keywords": [],
   "author": "",

@@ -23,7 +23,8 @@ cp .env.example .env
 
 Fill in your Supabase credentials:
 - `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_ANON_KEY`: Your Supabase anon key
+- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (preferred for writes)
+- `SUPABASE_ANON_KEY`: Your Supabase anon key (fallback if service role key is not set)
 - `SERPAPI_KEY`: (Optional) SerpApi key for live mode (required when using live mode)
 - `PORT`: (Optional) Server port (default: 3000)
 - `HOST`: (Optional) Server host (default: 0.0.0.0)
@@ -204,76 +205,177 @@ If no standings data is found, the provider throws a clear error including:
 6. Results are merged and persisted to database
 7. Success logs show: `[standings] Central League: 6 teams`, `[standings] Pacific League: 6 teams`, `[standings] Total rows persisted: 12`
 
-## Manual Scripts
+## Standings Cron
 
-### `run-standings.ts` - One-shot Standings Runner (Pre-Cron)
+### `run-standings.ts` - Standings Cron Runner (Node.js)
 
-A manual script to fetch and persist NPB standings for a given season. This script is intended for manual execution only, as a validation step before adding cron automation.
+The canonical entrypoint for standings ingestion. This script fetches and persists NPB standings for a given season using shared backend modules, ensuring a single source of truth for all standings logic.
+
+**Location:** `src/scripts/run-standings.ts`
 
 **Purpose:**
-- Validate standings fetching and persistence before implementing cron automation
-- Manually test the SerpApi provider in live mode
-- Verify database upsert logic for standings
+- Production-ready, idempotent cron job for nightly standings updates
+- Manual execution for testing and validation
+- Single source of truth for standings ingestion logic
+- Node.js-only execution (no Deno, no Edge Functions)
 
-**How to run:**
+**Why Node.js-Only?**
+
+We standardized on Node.js-only execution to:
+- **Simplify architecture:** One runtime, one deployment target
+- **Better tooling:** Full access to Node.js ecosystem and debugging tools
+- **External scheduling:** Use external schedulers (GitHub Actions, Railway cron, etc.) for better control and observability
+- **Consistency:** All scripts use the same runtime and patterns
+
+**How to run manually:**
 
 ```bash
-# Using npm script (recommended)
-# Unix/Linux/Mac
-SERPAPI_KEY=your_key npm run run:standings
+# Default season (current year)
+npm run standings:run
 
-# Windows PowerShell
-$env:SERPAPI_KEY="your_key"; npm run run:standings
+# Specific season
+npm run standings:run -- --season=2026
 
-# Windows CMD
-set SERPAPI_KEY=your_key && npm run run:standings
-
-# Or using npx/tsx directly
-# Unix/Linux/Mac
-SERPAPI_KEY=your_key npx tsx src/scripts/run-standings.ts
-
-# Windows PowerShell
-$env:SERPAPI_KEY="your_key"; npx tsx src/scripts/run-standings.ts
-
-# Windows CMD
-set SERPAPI_KEY=your_key && npx tsx src/scripts/run-standings.ts
+# Direct execution
+tsx src/scripts/run-standings.ts [--season=2026]
 ```
 
 **What it does:**
 1. Loads environment variables from `.env` file (if present)
-2. Validates that `SERPAPI_KEY` environment variable is set
-3. Validates that `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set
-4. Instantiates `SerpApiProvider` in live mode
-5. Fetches standings for both leagues (Central and Pacific) for season 2026 (hardcoded)
-6. Validates that each league returns exactly 6 teams
-7. Validates that there are no duplicate teamId + season combinations
-8. Persists standings to the database using idempotent upserts
-9. Validates that exactly 12 rows were persisted (6 per league)
-10. Logs clear progress messages throughout execution, including league-specific counts
+2. Validates required environment variables (SERPAPI_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY)
+3. Parses CLI arguments for season (defaults to current year)
+4. Fetches teams from database (validates exactly 12 teams exist)
+5. Fetches standings for both leagues using shared `fetchStandingsForBothLeagues()` function
+6. **Hard validation guards (fail fast):**
+   - Asserts exactly 12 total standings rows
+   - Asserts exactly 6 Central League teams
+   - Asserts exactly 6 Pacific League teams
+   - Asserts no duplicate (teamId, season) combinations
+7. Persists to database using idempotent upserts (ON CONFLICT (team_id, season))
+8. Validates persisted data (12 rows)
+9. Exits with status code 0 on success, 1 on failure
 
-**Success Criteria:**
-- Exactly 12 standings rows are persisted (6 Central League + 6 Pacific League)
-- Each team appears exactly once per season
-- League integrity is maintained (teams match their expected league)
-- Log output shows:
-  - `[standings] Central League: 6 teams`
-  - `[standings] Pacific League: 6 teams`
-  - `[standings] Total rows persisted: 12`
+**Idempotent Upsert Strategy:**
+
+The cron job uses idempotent database writes keyed by `(team_id, season)`:
+
+- **Database constraint:** `UNIQUE(team_id, season)` (defined in migration)
+- **Upsert logic:** `INSERT ... ON CONFLICT (team_id, season) DO UPDATE`
+- **Updated fields:** wins, losses, ties, games_back, pct, home_record, away_record, last_10, league, updated_at
+- **Never deletes rows:** Only updates existing rows or inserts new ones
+- **Safe retries:** Rerunning the job is safe (no duplicate rows, no race conditions)
+
+**Why Team-Anchored SerpApi Queries?**
+
+The cron job uses team-anchored queries (e.g., `"Yomiuri Giants standings 2026"`) instead of league-only queries because:
+
+- **Reliability:** SerpApi league-only queries often fail to return `sports_results`
+- **Consistency:** Team-anchored queries consistently return complete league standings (all 6 teams)
+- **Anchor teams:**
+  - **Central League:** `"Yomiuri Giants standings {season}"`
+  - **Pacific League:** `"Fukuoka SoftBank Hawks standings {season}"`
+
+**Expected Row Count:**
+
+The cron job expects and validates exactly **12 standings rows**:
+- 6 Central League teams
+- 6 Pacific League teams
+
+If any validation fails, the job exits with status code 1 and logs an error. No partial data is written to the database.
+
+**Structured Logging:**
+
+All logs use the `[standings][cron]` prefix for easy filtering:
+
+```
+[standings][cron] 2026-01-15T03:00:00.000Z Starting standings run
+[standings][cron] 2026-01-15T03:00:00.100Z Season: 2026
+[standings][cron] 2026-01-15T03:00:00.200Z Found 12 teams in database
+[standings][cron] 2026-01-15T03:00:00.300Z Fetching standings for season 2026 from SerpApi...
+[standings][cron] 2026-01-15T03:00:05.000Z Central League: 6 teams
+[standings][cron] 2026-01-15T03:00:05.100Z Pacific League: 6 teams
+[standings][cron] 2026-01-15T03:00:05.200Z Validating standings data...
+[standings][cron] 2026-01-15T03:00:05.300Z Persisting standings to database...
+[standings][cron] 2026-01-15T03:00:05.500Z Upsert complete (12 rows)
+[standings][cron] 2026-01-15T03:00:05.600Z Success
+```
+
+On failure:
+```
+[standings][cron][ERROR] 2026-01-15T03:00:00.000Z <message>
+```
 
 **Environment Variables:**
+
 - `SERPAPI_KEY` (required): Your SerpApi API key
 - `SUPABASE_URL` (required): Your Supabase project URL
-- `SUPABASE_ANON_KEY` (required): Your Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` (preferred): Your Supabase service role key (for writes)
+- `SUPABASE_ANON_KEY` (fallback): Your Supabase anonymous key (used if service role key is not set)
 
 These can be set in a `.env` file in the project root, or as environment variables when running the script.
 
-**Database behavior:**
-- Uses `upsertStandings()` helper function
-- Idempotent upserts keyed by `(team_id, season)`
-- Updates: wins, losses, ties, games_back, pct, home_record, away_record, last_10, league
-- Does not delete rows
+## Nightly Standings Cron (GitHub Actions)
 
-**Note:** This is a manual pre-cron validation script. Cron automation will be added later once validated.
+Standings ingestion runs automatically via GitHub Actions on a nightly schedule. The workflow is configured in `.github/workflows/nightly-standings.yml`.
+
+**Schedule:**
+- Runs nightly at **03:00 UTC**
+- Can also be triggered manually from the GitHub Actions UI
+
+**How it works:**
+1. GitHub Actions triggers the workflow at the scheduled time (or manually)
+2. The workflow checks out the repository and sets up Node.js 18
+3. Dependencies are installed with `npm ci`
+4. The `npm run standings:run` script is executed
+5. Secrets are injected as environment variables (managed in GitHub, not `.env`)
+
+**Idempotency:**
+The job is **idempotent and safe to re-run**. It uses database upserts keyed by `(team_id, season)`, so:
+- Running multiple times produces the same result
+- No duplicate rows are created
+- No race conditions occur
+- Manual triggers are safe for testing
+
+**Manual Trigger:**
+To manually trigger the workflow:
+1. Go to the **Actions** tab in your GitHub repository
+2. Select **Nightly NPB Standings** from the workflow list
+3. Click **Run workflow** button
+4. Select the branch (usually `main` or `master`)
+5. Click **Run workflow** to start
+
+**Secrets Management:**
+Secrets are managed in GitHub, not in `.env` files:
+- Go to **Settings** → **Secrets and variables** → **Actions**
+- Add the following secrets:
+  - `SERPAPI_KEY`: Your SerpApi API key
+  - `SUPABASE_URL`: Your Supabase project URL
+  - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (preferred for writes)
+
+**What NOT to do:**
+- ❌ Do NOT use system crontab (use GitHub Actions instead)
+- ❌ Do NOT introduce Supabase Edge Functions (we use Node.js-only)
+- ❌ Do NOT commit secrets to the repository
+- ❌ Do NOT add scheduler logic inside Node scripts (cron responsibility lives in GitHub Actions)
+
+**Error Handling:**
+
+The cron job fails fast with clear error messages:
+- Missing environment variables → exits with status 1
+- Invalid season argument → exits with status 1
+- Database connection failure → exits with status 1
+- Invalid standings data (wrong count, duplicates) → exits with status 1
+- SerpApi fetch failure → exits with status 1
+- Database write failure → exits with status 1
+
+**Safety Features:**
+
+- ✅ Idempotent writes (safe to rerun)
+- ✅ Hard guards (fail fast, no partial writes)
+- ✅ Structured logging (cron-friendly observability)
+- ✅ No locking required (idempotency eliminates race conditions)
+- ✅ No retries needed (fail fast, let cron retry on next run)
+- ✅ Single source of truth (all logic in shared backend modules)
 
 ## Testing
 

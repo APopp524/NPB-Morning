@@ -26,7 +26,7 @@ export async function upsertStanding(input: StandingInput): Promise<Standing> {
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: 'id',
+        onConflict: 'team_id,season',
       }
     )
     .select()
@@ -85,10 +85,11 @@ export async function upsertStandings(
   }));
 
   // Upsert all rows in a single call (atomic operation)
+  // Uses UNIQUE(team_id, season) constraint for idempotent writes
   const { data, error } = await supabase
     .from('standings')
     .upsert(rows, {
-      onConflict: 'id',
+      onConflict: 'team_id,season',
     })
     .select();
 
