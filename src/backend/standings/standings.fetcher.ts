@@ -5,10 +5,19 @@
  */
 
 import { SerpApiClient } from '../providers/serpapi/client';
-import { parseStandingsFromResponse } from './standings.parser';
+import { parseStandingsFromResponse, StandingsResult } from './standings.parser';
 import { mapSerpApiTeamNameToDatabaseTeam } from './standings.mapper';
 import { StandingInput } from '../models/standing';
 import { Team } from '../models/team';
+
+/**
+ * Discriminated union for standings fetching results.
+ * 'preseason' indicates that standings exist but contain no statistical data.
+ * 'ok' indicates that standings contain full statistical data ready for database persistence.
+ */
+export type StandingsFetchResult =
+  | { status: 'ok'; standings: StandingInput[] }
+  | { status: 'preseason' };
 
 /**
  * Anchor teams used for team-anchored queries.
@@ -36,21 +45,29 @@ interface FetchStandingsForLeagueParams {
  * - League correctness based on DB team data (teams.league)
  * - If a team appears in the wrong league → throw
  * - If a team cannot be mapped → throw
+ * - Returns preseason status if standings exist but contain no statistical data
  * 
  * @param params Configuration object
- * @returns Array of StandingInput objects for the specified league
+ * @returns StandingsFetchResult - either ok with StandingInput[] or preseason status
  */
 export async function fetchStandingsForLeague({
   serpApiClient,
   season,
   league,
   teams,
-}: FetchStandingsForLeagueParams): Promise<StandingInput[]> {
+}: FetchStandingsForLeagueParams): Promise<StandingsFetchResult> {
   const anchorTeam = ANCHOR_TEAM_BY_LEAGUE[league];
   const query = `${anchorTeam} standings ${season}`;
 
   const response = await serpApiClient.search(query);
-  const parsedStandings = parseStandingsFromResponse(response, query, league);
+  const parseResult = parseStandingsFromResponse(response, query, league);
+
+  // If preseason, return immediately without team mapping or validation
+  if (parseResult.status === 'preseason') {
+    return { status: 'preseason' };
+  }
+
+  const parsedStandings = parseResult.standings;
 
   if (teams.length === 0) {
     throw new Error('No teams found. Teams must be provided before mapping standings.');
@@ -122,7 +139,7 @@ export async function fetchStandingsForLeague({
     );
   }
 
-  return standingInputs;
+  return { status: 'ok', standings: standingInputs };
 }
 
 interface FetchStandingsForBothLeaguesParams {
@@ -134,16 +151,17 @@ interface FetchStandingsForBothLeaguesParams {
 /**
  * Fetch standings for both leagues and merge the results.
  * Validates that each league returns exactly 6 teams and that there are no duplicates.
+ * Returns preseason status if either league is in preseason.
  * 
  * @param params Configuration object
- * @returns Array of StandingInput objects for both leagues (12 teams total)
+ * @returns StandingsFetchResult - either ok with StandingInput[] for both leagues (12 teams total) or preseason status
  */
 export async function fetchStandingsForBothLeagues({
   serpApiClient,
   season,
   teams,
-}: FetchStandingsForBothLeaguesParams): Promise<StandingInput[]> {
-  const [central, pacific] = await Promise.all([
+}: FetchStandingsForBothLeaguesParams): Promise<StandingsFetchResult> {
+  const [centralResult, pacificResult] = await Promise.all([
     fetchStandingsForLeague({
       serpApiClient,
       season,
@@ -157,6 +175,14 @@ export async function fetchStandingsForBothLeagues({
       teams,
     }),
   ]);
+
+  // If either league is in preseason, return preseason status
+  if (centralResult.status === 'preseason' || pacificResult.status === 'preseason') {
+    return { status: 'preseason' };
+  }
+
+  const central = centralResult.standings;
+  const pacific = pacificResult.standings;
 
   // Validate each league has exactly 6 teams (already enforced in fetchStandingsForLeague, but double-check)
   if (central.length !== 6) {
@@ -191,6 +217,6 @@ export async function fetchStandingsForBothLeagues({
     );
   }
 
-  return allStandings;
+  return { status: 'ok', standings: allStandings };
 }
 

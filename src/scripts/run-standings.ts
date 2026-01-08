@@ -125,12 +125,20 @@ async function runStandingsForSeason(season: number): Promise<void> {
 
   // Fetch standings for both leagues using shared fetcher
   log('info', `Fetching standings for season ${season} from SerpApi...`);
-  const standings = await fetchStandingsForBothLeagues({
+  const result = await fetchStandingsForBothLeagues({
     serpApiClient,
     season,
     teams,
   });
 
+  // Handle preseason state
+  if (result.status === 'preseason') {
+    log('info', 'Preseason detected — standings not yet available. Skipping persistence.');
+    log('info', 'Success');
+    return;
+  }
+
+  const standings = result.standings;
   const centralCount = standings.filter(s => s.league === 'central').length;
   const pacificCount = standings.filter(s => s.league === 'pacific').length;
   log('info', `Central League: ${centralCount} teams`);

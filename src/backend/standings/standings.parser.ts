@@ -17,15 +17,25 @@ export interface ParsedStanding {
 }
 
 /**
+ * Discriminated union for standings parsing results.
+ * 'preseason' indicates that standings exist but contain no statistical data.
+ * 'ok' indicates that standings contain full statistical data.
+ */
+export type StandingsResult =
+  | { status: 'ok'; standings: ParsedStanding[] }
+  | { status: 'preseason' };
+
+/**
  * Parse standings from SerpApi response.
  * Validates that sports_results.league.standings exists and is non-empty.
+ * Detects preseason state when standings exist but contain no statistical data.
  * Fails loudly on malformed data.
  */
 export function parseStandingsFromResponse(
   response: SerpApiResponse,
   query: string,
   expectedLeague?: 'central' | 'pacific'
-): ParsedStanding[] {
+): StandingsResult {
   if (!response.sports_results) {
     const searchId = response.search_metadata?.id || 'unknown';
     const leagueMsg = expectedLeague ? `League: ${expectedLeague}. ` : '';
@@ -60,7 +70,19 @@ export function parseStandingsFromResponse(
     );
   }
 
-  return standings.map((row: SerpApiStandingRow) => {
+  // Check if any row contains statistical data (w and l)
+  // If none do, this is preseason - return early without parsing
+  const hasStats = standings.some(
+    (row: SerpApiStandingRow) =>
+      row.w !== undefined && row.w !== null && row.l !== undefined && row.l !== null
+  );
+
+  if (!hasStats) {
+    return { status: 'preseason' };
+  }
+
+  // Parse standings with full validation
+  const parsedStandings = standings.map((row: SerpApiStandingRow) => {
     if (!row.team || !row.team.name) {
       throw new Error(
         `Invalid standings row: missing team name. ` +
@@ -145,5 +167,7 @@ export function parseStandingsFromResponse(
       last10: row.l10 || null,
     };
   });
+
+  return { status: 'ok', standings: parsedStandings };
 }
 
