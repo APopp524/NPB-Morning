@@ -14,6 +14,7 @@ export interface ParsedStanding {
   homeRecord?: string | null;
   awayRecord?: string | null;
   last10?: string | null;
+  thumbnail?: string | null;
 }
 
 /**
@@ -165,6 +166,7 @@ export function parseStandingsFromResponse(
       homeRecord: row.home || null,
       awayRecord: row.away || null,
       last10: row.l10 || null,
+      thumbnail: row.team.thumbnail || null,
     };
   });
 

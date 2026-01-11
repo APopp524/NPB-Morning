@@ -9,6 +9,7 @@ import { parseStandingsFromResponse, StandingsResult } from './standings.parser'
 import { mapSerpApiTeamNameToDatabaseTeam } from './standings.mapper';
 import { StandingInput } from '../models/standing';
 import { Team } from '../models/team';
+import { maybeUpdateTeamThumbnail } from '../db/teams';
 
 /**
  * Discriminated union for standings fetching results.
@@ -100,6 +101,21 @@ export async function fetchStandingsForLeague({
         `League mismatch: Team "${parsed.teamName}" (ID: ${teamId}) belongs to ${team.league} league, ` +
           `but was found in ${league} league standings. Query: "${query}".`
       );
+    }
+
+    // Update team thumbnail if present (non-blocking, never throws)
+    if (parsed.thumbnail) {
+      maybeUpdateTeamThumbnail(
+        teamId,
+        parsed.thumbnail,
+        {
+          teamName: parsed.teamName,
+          season,
+          league,
+        }
+      ).catch(() => {
+        // Silently ignore errors - maybeUpdateTeamThumbnail already logs warnings
+      });
     }
 
     standingInputs.push({

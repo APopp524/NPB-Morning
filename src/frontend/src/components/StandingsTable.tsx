@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { StandingWithTeam } from '@/src/types/standingsWithTeam'
 
 interface StandingsTableProps {
@@ -56,38 +57,78 @@ export function StandingsTable({ title, standings }: StandingsTableProps) {
                 : '—'
 
               return (
-                <tr key={standing.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {position}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    <div>
-                      <div className="font-medium">{standing.team.name_en}</div>
-                      <div className="text-xs text-gray-500">{standing.team.name}</div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
-                    {standing.wins}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
-                    {standing.losses}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
-                    {standing.ties}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
-                    {pctDisplay}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
-                    {gamesBackDisplay}
-                  </td>
-                </tr>
+                <TeamRow
+                  key={standing.id}
+                  standing={standing}
+                  position={position}
+                  pctDisplay={pctDisplay}
+                  gamesBackDisplay={gamesBackDisplay}
+                />
               )
             })}
           </tbody>
         </table>
       </div>
     </div>
+  )
+}
+
+function TeamRow({
+  standing,
+  position,
+  pctDisplay,
+  gamesBackDisplay,
+}: {
+  standing: StandingWithTeam
+  position: number
+  pctDisplay: string
+  gamesBackDisplay: string
+}) {
+  const [imageError, setImageError] = useState(false)
+  const showThumbnail = standing.team.thumbnail_url && !imageError
+
+  return (
+    <tr className="hover:bg-gray-50">
+      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+        {position}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+        <div className="flex items-center gap-2">
+          {showThumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={standing.team.thumbnail_url!}
+              alt={standing.team.name_en}
+              className="w-8 h-8 object-contain flex-shrink-0"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 flex-shrink-0">
+              {standing.team.name_en.charAt(0)}
+            </div>
+          )}
+          <div>
+            <div className="font-medium">{standing.team.name_en}</div>
+            <div className="text-xs text-gray-500">{standing.team.name}</div>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+        {standing.wins}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+        {standing.losses}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+        {standing.ties}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+        {pctDisplay}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+        {gamesBackDisplay}
+      </td>
+    </tr>
   )
 }
 

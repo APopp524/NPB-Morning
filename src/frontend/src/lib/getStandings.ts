@@ -40,7 +40,8 @@ export async function getStandings(): Promise<GroupedStandings> {
       teams!inner (
         id,
         name,
-        name_en
+        name_en,
+        thumbnail_url
       )
     `)
     .eq('season', latestSeason)
@@ -78,6 +79,7 @@ export async function getStandings(): Promise<GroupedStandings> {
           id: team.id,
           name: team.name,
           name_en: team.name_en,
+          thumbnail_url: team.thumbnail_url || null,
         },
       }
     })

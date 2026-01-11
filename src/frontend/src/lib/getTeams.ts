@@ -12,7 +12,7 @@ export async function getTeams(): Promise<GroupedTeams> {
   // Fetch all teams
   const { data: teamsData, error: teamsError } = await supabase
     .from('teams')
-    .select('id, name, name_en, league')
+    .select('id, name, name_en, league, thumbnail_url')
     .order('name_en', { ascending: true })
 
   if (teamsError) {
@@ -29,6 +29,7 @@ export async function getTeams(): Promise<GroupedTeams> {
     name: team.name,
     name_en: team.name_en,
     league: team.league,
+    thumbnail_url: team.thumbnail_url || null,
   }))
 
   // Group by league
