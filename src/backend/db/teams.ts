@@ -51,11 +51,13 @@ export async function upsertTeams(inputs: TeamInput[]): Promise<Team[]> {
  * This is a non-blocking operation that never throws errors.
  * 
  * Rules:
+ * - Updates target teams by canonical teamId using .eq('id', teamId)
+ * - Never filters by league or season
  * - Only updates if thumbnail_url is NULL or different from new URL
  * - Wrapped in try/catch to never fail the standings cron
- * - Logs warnings on failure with team name, season, and league context
+ * - Logs structured information for debugging
  * 
- * @param teamId The team ID to update
+ * @param teamId The canonical team ID to update (must match teams.id)
  * @param thumbnailUrl The new thumbnail URL (optional)
  * @param context Context for logging (team name, season, league)
  * @param logger Optional logger function (defaults to console.warn)
@@ -74,6 +76,11 @@ export async function maybeUpdateTeamThumbnail(
   try {
     const supabase = getSupabaseClient();
 
+    // Log attempt with structured data
+    logger(
+      `[thumbnail] Attempting update: teamId="${teamId}", teamName="${context.teamName}", thumbnailUrl="${thumbnailUrl}"`
+    );
+
     // First, get the current team record to check if update is needed
     const { data: currentTeam, error: fetchError } = await supabase
       .from('teams')
@@ -83,42 +90,60 @@ export async function maybeUpdateTeamThumbnail(
 
     if (fetchError) {
       logger(
-        `Failed to fetch team for thumbnail update: Team ID "${teamId}", ` +
-          `Team: "${context.teamName}", Season: ${context.season}, ` +
-          `League: ${context.league || 'unknown'}. Error: ${fetchError.message}`
+        `[thumbnail][error] Failed to fetch team: teamId="${teamId}", teamName="${context.teamName}", error="${fetchError.message}"`
+      );
+      return;
+    }
+
+    if (!currentTeam) {
+      logger(
+        `[thumbnail][warn] No team row found: teamId="${teamId}", teamName="${context.teamName}"`
       );
       return;
     }
 
     // Only update if thumbnail_url is NULL or different
-    if (currentTeam && currentTeam.thumbnail_url === thumbnailUrl) {
-      return; // No update needed
+    if (currentTeam.thumbnail_url === thumbnailUrl) {
+      // No update needed - thumbnail already matches
+      return;
     }
 
-    // Update the thumbnail
-    const { error: updateError } = await supabase
+    // Update the thumbnail - target by canonical teamId only
+    // Never filter by league or season - only use .eq('id', teamId)
+    const { data: updatedData, error: updateError } = await supabase
       .from('teams')
       .update({
         thumbnail_url: thumbnailUrl,
         thumbnail_source: 'serpapi',
         thumbnail_updated_at: new Date().toISOString(),
       })
-      .eq('id', teamId);
+      .eq('id', teamId)
+      .select('id');
 
     if (updateError) {
       logger(
-        `Failed to update team thumbnail: Team ID "${teamId}", ` +
-          `Team: "${context.teamName}", Season: ${context.season}, ` +
-          `League: ${context.league || 'unknown'}. Error: ${updateError.message}`
+        `[thumbnail][error] Update failed: teamId="${teamId}", teamName="${context.teamName}", error="${updateError.message}"`
+      );
+      return;
+    }
+
+    // Check how many rows were updated
+    const rowsUpdated = updatedData?.length ?? 0;
+    
+    if (rowsUpdated === 0) {
+      logger(
+        `[thumbnail][warn] No team row updated: teamId="${teamId}", teamName="${context.teamName}", thumbnailUrl="${thumbnailUrl}"`
+      );
+    } else {
+      logger(
+        `[thumbnail] Update successful: teamId="${teamId}", teamName="${context.teamName}", rowsUpdated=${rowsUpdated}`
       );
     }
   } catch (error) {
     // Catch any unexpected errors and log them
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger(
-      `Unexpected error updating team thumbnail: Team ID "${teamId}", ` +
-        `Team: "${context.teamName}", Season: ${context.season}, ` +
-        `League: ${context.league || 'unknown'}. Error: ${errorMessage}`
+      `[thumbnail][error] Unexpected error: teamId="${teamId}", teamName="${context.teamName}", error="${errorMessage}"`
     );
   }
 }
