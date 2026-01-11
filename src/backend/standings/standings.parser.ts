@@ -14,7 +14,6 @@ export interface ParsedStanding {
   homeRecord?: string | null;
   awayRecord?: string | null;
   last10?: string | null;
-  thumbnail?: string | null;
 }
 
 /**
@@ -24,7 +23,7 @@ export interface ParsedStanding {
  */
 export type StandingsResult =
   | { status: 'ok'; standings: ParsedStanding[] }
-  | { status: 'preseason' };
+  | { status: 'preseason'; standings: ParsedStanding[] };
 
 /**
  * Parse standings from SerpApi response.
@@ -72,14 +71,36 @@ export function parseStandingsFromResponse(
   }
 
   // Check if any row contains statistical data (w and l)
-  // If none do, this is preseason - return early without parsing
+  // If none do, this is preseason
   const hasStats = standings.some(
     (row: SerpApiStandingRow) =>
       row.w !== undefined && row.w !== null && row.l !== undefined && row.l !== null
   );
 
   if (!hasStats) {
-    return { status: 'preseason' };
+    // Preseason: extract team names only (no stats)
+    const parsedStandings = standings.map((row: SerpApiStandingRow) => {
+      if (!row.team || !row.team.name) {
+        throw new Error(
+          `Invalid standings row: missing team name. ` +
+            `Query: "${query}". ` +
+            `Row: ${JSON.stringify(row)}`
+        );
+      }
+
+      return {
+        teamName: row.team.name,
+        wins: 0, // Placeholder for preseason
+        losses: 0, // Placeholder for preseason
+        winPct: null,
+        gamesBack: 0, // Placeholder for preseason
+        homeRecord: null,
+        awayRecord: null,
+        last10: null,
+      };
+    });
+
+    return { status: 'preseason', standings: parsedStandings };
   }
 
   // Parse standings with full validation
@@ -166,7 +187,6 @@ export function parseStandingsFromResponse(
       homeRecord: row.home || null,
       awayRecord: row.away || null,
       last10: row.l10 || null,
-      thumbnail: row.team.thumbnail || null,
     };
   });
 

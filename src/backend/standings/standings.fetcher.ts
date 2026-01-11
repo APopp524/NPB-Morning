@@ -9,7 +9,6 @@ import { parseStandingsFromResponse, StandingsResult } from './standings.parser'
 import { mapSerpApiTeamNameToDatabaseTeam } from './standings.mapper';
 import { StandingInput } from '../models/standing';
 import { Team } from '../models/team';
-import { maybeUpdateTeamThumbnail } from '../db/teams';
 
 /**
  * Discriminated union for standings fetching results.
@@ -63,12 +62,8 @@ export async function fetchStandingsForLeague({
   const response = await serpApiClient.search(query);
   const parseResult = parseStandingsFromResponse(response, query, league);
 
-  // If preseason, return immediately without team mapping or validation
-  if (parseResult.status === 'preseason') {
-    return { status: 'preseason' };
-  }
-
   const parsedStandings = parseResult.standings;
+  const isPreseason = parseResult.status === 'preseason';
 
   if (teams.length === 0) {
     throw new Error('No teams found. Teams must be provided before mapping standings.');
@@ -103,34 +98,27 @@ export async function fetchStandingsForLeague({
       );
     }
 
-    // Update team thumbnail if present (non-blocking, never throws)
-    if (parsed.thumbnail) {
-      maybeUpdateTeamThumbnail(
+    // Only create standing inputs if not preseason (preseason has placeholder stats)
+    if (!isPreseason) {
+      standingInputs.push({
         teamId,
-        parsed.thumbnail,
-        {
-          teamName: parsed.teamName,
-          season,
-          league,
-        }
-      ).catch(() => {
-        // Silently ignore errors - maybeUpdateTeamThumbnail already logs warnings
+        season,
+        wins: parsed.wins,
+        losses: parsed.losses,
+        ties: 0, // SerpApi doesn't provide ties, defaulting to 0
+        gamesBack: parsed.gamesBack,
+        pct: parsed.winPct,
+        homeRecord: parsed.homeRecord,
+        awayRecord: parsed.awayRecord,
+        last10: parsed.last10,
+        league,
       });
     }
+  }
 
-    standingInputs.push({
-      teamId,
-      season,
-      wins: parsed.wins,
-      losses: parsed.losses,
-      ties: 0, // SerpApi doesn't provide ties, defaulting to 0
-      gamesBack: parsed.gamesBack,
-      pct: parsed.winPct,
-      homeRecord: parsed.homeRecord,
-      awayRecord: parsed.awayRecord,
-      last10: parsed.last10,
-      league,
-    });
+  // If preseason, return early after processing thumbnails
+  if (isPreseason) {
+    return { status: 'preseason' };
   }
 
   if (unmappedTeams.length > 0) {
