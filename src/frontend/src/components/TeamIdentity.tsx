@@ -8,6 +8,12 @@ interface TeamIdentityProps {
   size?: 20 | 24 | 32
 }
 
+const sizeClasses = {
+  20: 'w-5 h-5',
+  24: 'w-6 h-6',
+  32: 'w-8 h-8',
+}
+
 export function TeamIdentity({
   name,
   thumbnailUrl,
@@ -20,6 +26,7 @@ export function TeamIdentity({
   
   // Determine if we should show the image
   const shouldShowImage = showLogos && thumbnailUrl && !imageError
+  const sizeClass = sizeClasses[size]
 
   return (
     <div className="flex items-center gap-2">
@@ -28,12 +35,12 @@ export function TeamIdentity({
         <img
           src={thumbnailUrl}
           alt={name}
-          className={`w-${size} h-${size} object-contain flex-shrink-0`}
+          className={`${sizeClass} object-contain flex-shrink-0`}
           onError={() => setImageError(true)}
         />
       ) : (
         <div
-          className={`w-${size} h-${size} rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 flex-shrink-0`}
+          className={`${sizeClass} rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 flex-shrink-0`}
         >
           {name.charAt(0)}
         </div>

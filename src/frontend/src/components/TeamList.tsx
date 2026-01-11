@@ -1,4 +1,5 @@
 import type { Team } from '@/src/types/teams'
+import { TeamIdentity } from './TeamIdentity'
 
 interface TeamListProps {
   title: string
@@ -24,7 +25,10 @@ export function TeamList({ title, teams }: TeamListProps) {
             key={team.id}
             className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
           >
-            <div className="font-medium text-gray-900">{team.name_en}</div>
+            <TeamIdentity
+              name={team.name_en}
+              thumbnailUrl={team.thumbnail_url}
+            />
             <div className="text-sm text-gray-500 mt-1">{team.name}</div>
           </div>
         ))}
