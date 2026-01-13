@@ -1,8 +1,14 @@
+import { PageHeader } from '@/src/components/PageHeader'
+
 export default function Home() {
   return (
-    <main className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold">NPB Morning</h1>
-    </main>
+    <>
+      <PageHeader title="NPB Morning" />
+      <p className="text-gray-600">
+        Welcome to NPB Morning. Explore standings and teams from Nippon
+        Professional Baseball.
+      </p>
+    </>
   )
 }
 
