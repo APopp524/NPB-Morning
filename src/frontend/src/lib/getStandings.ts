@@ -5,6 +5,7 @@ export interface GroupedStandings {
   season: number
   central: StandingWithTeam[]
   pacific: StandingWithTeam[]
+  updated_at: string
 }
 
 export async function getStandings(): Promise<GroupedStandings> {
@@ -37,6 +38,7 @@ export async function getStandings(): Promise<GroupedStandings> {
       games_back,
       league,
       team_id,
+      updated_at,
       teams!inner (
         id,
         name,
@@ -66,7 +68,16 @@ export async function getStandings(): Promise<GroupedStandings> {
         return null
       }
 
-      return {
+      const teamData: StandingWithTeam['team'] = {
+        id: team.id,
+        name: team.name,
+        name_en: team.name_en,
+      }
+      if (team.thumbnail_url != null) {
+        teamData.thumbnail_url = team.thumbnail_url
+      }
+
+      const result: StandingWithTeam = {
         id: standing.id,
         season: standing.season,
         wins: standing.wins,
@@ -75,13 +86,10 @@ export async function getStandings(): Promise<GroupedStandings> {
         pct: standing.pct,
         games_back: standing.games_back,
         league: standing.league || team.league,
-        team: {
-          id: team.id,
-          name: team.name,
-          name_en: team.name_en,
-          thumbnail_url: team.thumbnail_url || null,
-        },
+        updated_at: standing.updated_at,
+        team: teamData,
       }
+      return result
     })
     .filter((standing): standing is StandingWithTeam => standing !== null)
 
@@ -100,10 +108,18 @@ export async function getStandings(): Promise<GroupedStandings> {
   central.sort(sortStandings)
   pacific.sort(sortStandings)
 
+  // Get the latest updated_at from the transformed standings
+  // All standings should have similar updated_at, so we can use any one
+  const latestUpdatedAt =
+    standings.length > 0
+      ? standings[0].updated_at
+      : new Date().toISOString()
+
   return {
     season: latestSeason,
     central,
     pacific,
+    updated_at: latestUpdatedAt,
   }
 }
 

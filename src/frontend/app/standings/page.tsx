@@ -1,5 +1,5 @@
 import { getStandings } from '@/src/lib/getStandings'
-import { StandingsTable } from '@/src/components/StandingsTable'
+import { StandingsDisplay } from '@/src/components/StandingsDisplay'
 
 export default async function StandingsPage() {
   let standingsData
@@ -27,14 +27,10 @@ export default async function StandingsPage() {
       <h1 className="text-3xl font-bold mb-2">NPB Standings</h1>
       <p className="text-gray-600 mb-8">{standingsData.season} Season</p>
 
-      <StandingsTable
-        title="Central League"
-        standings={standingsData.central}
-      />
-
-      <StandingsTable
-        title="Pacific League"
-        standings={standingsData.pacific}
+      <StandingsDisplay
+        central={standingsData.central}
+        pacific={standingsData.pacific}
+        updatedAt={standingsData.updated_at}
       />
     </main>
   )

@@ -7,6 +7,7 @@ export interface StandingWithTeam {
   pct: number | null
   games_back: number | null
   league: 'central' | 'pacific'
+  updated_at: string
   team: {
     id: string
     name: string
