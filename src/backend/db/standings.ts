@@ -119,3 +119,31 @@ export async function upsertStandings(
   }));
 }
 
+/**
+ * Preseason keepalive: Update updated_at timestamp for all standings rows for a given season.
+ * This prevents Supabase project pause due to inactivity during preseason.
+ * 
+ * This function:
+ * - Updates updated_at on all existing standings rows for the season
+ * - Does NOT modify wins/losses/etc (only touches updated_at)
+ * - Is idempotent and safe to run multiple times
+ * - Returns the number of rows updated
+ * 
+ * @param season The season year to update standings for
+ * @returns The number of rows updated
+ */
+export async function keepaliveStandings(season: number): Promise<number> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('standings')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('season', season)
+    .select('id');
+
+  if (error) {
+    throw new Error(`Failed to update standings keepalive: ${error.message}`);
+  }
+
+  return data?.length ?? 0;
+}

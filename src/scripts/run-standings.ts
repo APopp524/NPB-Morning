@@ -41,7 +41,7 @@ import { SerpApiClient } from '../backend/providers/serpapi/client';
 import { fetchStandingsForBothLeagues } from '../backend/standings/standings.fetcher';
 import { validateStandingsData } from '../backend/standings/standings.validation';
 import { getTeams } from '../backend/db/teams';
-import { upsertStandings } from '../backend/db/standings';
+import { upsertStandings, keepaliveStandings } from '../backend/db/standings';
 import type { StandingInput } from '../backend/models/standing';
 
 /**
@@ -99,6 +99,40 @@ function log(level: 'info' | 'error', message: string): void {
 }
 
 /**
+ * Check if current date falls within preseason period.
+ * Preseason: January 1 → March 20
+ * Regular season: March 21 → December 31
+ * 
+ * @param season The season year
+ * @returns true if current date is in preseason period
+ */
+function isPreseasonByDate(season: number): boolean {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-12
+  const day = now.getDate();
+
+  // If we're in the same year as the season, check if before March 21
+  if (currentYear === season) {
+    if (month < 3) {
+      return true; // January or February
+    }
+    if (month === 3 && day < 21) {
+      return true; // March 1-20
+    }
+    return false; // March 21 onwards
+  }
+
+  // If we're in the year before the season, it's preseason
+  if (currentYear === season - 1) {
+    return true; // Preseason for next year
+  }
+
+  // Otherwise, assume regular season
+  return false;
+}
+
+/**
  * Main standings runner logic
  */
 async function runStandingsForSeason(season: number): Promise<void> {
@@ -123,6 +157,21 @@ async function runStandingsForSeason(season: number): Promise<void> {
   }
   log('info', `Found ${teams.length} teams in database`);
 
+  // Check date-based preseason detection as a fallback
+  const isPreseasonByDateCheck = isPreseasonByDate(season);
+  if (isPreseasonByDateCheck) {
+    log('info', 'Preseason detected (date-based) — running keepalive update only');
+    try {
+      const updatedCount = await keepaliveStandings(season);
+      log('info', `Keepalive update complete: ${updatedCount} standings row(s) updated`);
+      log('info', 'Success');
+      return;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Preseason keepalive failed: ${errorMessage}`);
+    }
+  }
+
   // Fetch standings for both leagues using shared fetcher
   log('info', `Fetching standings for season ${season} from SerpApi...`);
   const result = await fetchStandingsForBothLeagues({
@@ -131,11 +180,18 @@ async function runStandingsForSeason(season: number): Promise<void> {
     teams,
   });
 
-  // Handle preseason state
+  // Handle preseason state detected from API response
   if (result.status === 'preseason') {
-    log('info', 'Preseason detected — standings not yet available. Skipping persistence.');
-    log('info', 'Success');
-    return;
+    log('info', 'Preseason detected (API response) — running keepalive update only');
+    try {
+      const updatedCount = await keepaliveStandings(season);
+      log('info', `Keepalive update complete: ${updatedCount} standings row(s) updated`);
+      log('info', 'Success');
+      return;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Preseason keepalive failed: ${errorMessage}`);
+    }
   }
 
   const standings = result.standings;

@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "NPB Morning backend",
   "main": "dist/backend/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/backend/index.ts",
