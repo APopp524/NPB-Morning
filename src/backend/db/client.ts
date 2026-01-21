@@ -1,22 +1,18 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabaseServer } from '../lib/supabase/server';
 
-let supabaseClient: SupabaseClient | null = null;
-
+/**
+ * Get the server-side Supabase client.
+ * 
+ * This function returns a client configured with:
+ * - SUPABASE_SERVICE_ROLE_KEY (bypasses RLS)
+ * - Session persistence disabled
+ * - Auto refresh disabled
+ * 
+ * This is used by all backend database operations (cron jobs, scripts, etc.)
+ * and should NEVER be imported into frontend code.
+ */
 export function getSupabaseClient(): SupabaseClient {
-  if (!supabaseClient) {
-    const url = process.env.SUPABASE_URL;
-    // Prefer service role key for writes, fall back to anon key
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-
-    if (!url || !key) {
-      throw new Error(
-        'SUPABASE_URL and (SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY) must be set'
-      );
-    }
-
-    supabaseClient = createClient(url, key);
-  }
-
-  return supabaseClient;
+  return supabaseServer;
 }
 
