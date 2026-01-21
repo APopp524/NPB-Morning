@@ -135,15 +135,25 @@ export async function upsertStandings(
 export async function keepaliveStandings(season: number): Promise<number> {
   const supabase = getSupabaseClient();
 
-  const { data, error } = await supabase
+  // Update all standings rows for the season (only filter by season)
+  const { error: updateError } = await supabase
     .from('standings')
     .update({ updated_at: new Date().toISOString() })
-    .eq('season', season)
-    .select('id');
+    .eq('season', season);
 
-  if (error) {
-    throw new Error(`Failed to update standings keepalive: ${error.message}`);
+  if (updateError) {
+    throw new Error(`Failed to update standings keepalive: ${updateError.message}`);
   }
 
-  return data?.length ?? 0;
+  // Count rows for this season to verify update
+  const { count, error: countError } = await supabase
+    .from('standings')
+    .select('*', { count: 'exact', head: true })
+    .eq('season', season);
+
+  if (countError) {
+    throw new Error(`Failed to count standings: ${countError.message}`);
+  }
+
+  return count ?? 0;
 }
