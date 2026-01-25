@@ -21,7 +21,8 @@
  * Environment Variables:
  *   - SERPAPI_KEY: Required. Your SerpApi API key.
  *   - SUPABASE_URL: Required. Your Supabase project URL.
- *   - SUPABASE_SERVICE_ROLE_KEY: Required. Service role key for server-side operations (bypasses RLS).
+ *   - SUPABASE_SERVICE_ROLE_KEY: Preferred for writes. Falls back to SUPABASE_ANON_KEY.
+ *   - SUPABASE_ANON_KEY: Fallback if SUPABASE_SERVICE_ROLE_KEY is not set.
  * 
  * Exit Codes:
  *   - 0: Success
@@ -74,9 +75,12 @@ function validateEnvironment(): void {
     throw new Error('SUPABASE_URL environment variable is required');
   }
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const hasAnonKey = !!process.env.SUPABASE_ANON_KEY;
+
+  if (!hasServiceKey && !hasAnonKey) {
     throw new Error(
-      'SUPABASE_SERVICE_ROLE_KEY environment variable is required for server-side operations'
+      'SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY environment variable is required'
     );
   }
 }

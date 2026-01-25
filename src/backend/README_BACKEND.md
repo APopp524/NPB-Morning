@@ -23,7 +23,8 @@ cp .env.example .env
 
 Fill in your Supabase credentials:
 - `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (required for server-side operations, bypasses RLS)
+- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (preferred for writes)
+- `SUPABASE_ANON_KEY`: Your Supabase anon key (fallback if service role key is not set)
 - `SERPAPI_KEY`: (Optional) SerpApi key for live mode (required when using live mode)
 - `PORT`: (Optional) Server port (default: 3000)
 - `HOST`: (Optional) Server host (default: 0.0.0.0)
