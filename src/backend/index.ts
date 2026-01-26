@@ -9,10 +9,11 @@ const fastify = Fastify({
 async function start() {
   try {
     // Initialize provider
-    const provider = new SerpApiProvider();
+    const apiKey = process.env.SERPAPI_KEY;
+    const provider = new SerpApiProvider(apiKey);
 
     // Register routes
-    await registerCronRoutes(fastify, provider);
+    await registerCronRoutes(fastify, provider, provider);
 
     // Health check
     fastify.get('/health', async () => {

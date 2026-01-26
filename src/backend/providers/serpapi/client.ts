@@ -7,6 +7,7 @@ export interface SerpApiResponse {
     league?: {
       standings?: SerpApiStandingRow[];
     };
+    games?: SerpApiGameRow[];
   };
   search_metadata?: {
     id?: string;
@@ -26,6 +27,23 @@ export interface SerpApiStandingRow {
   home?: string; // home record (e.g., "39-30")
   away?: string; // away record (e.g., "38-29")
   l10?: string; // last 10 games record (e.g., "6-4")
+}
+
+export interface SerpApiGameRow {
+  date?: string; // game date (e.g., "Jan 25, 2026" or "Mar 27")
+  time?: string; // game time (e.g., "6:00 PM" or "5:00 AM")
+  home_team?: {
+    name?: string;
+  };
+  away_team?: {
+    name?: string;
+  };
+  teams?: Array<{
+    name?: string;
+    kgmid?: string;
+  }>; // teams array format (first is away, second is home typically)
+  venue?: string; // venue name
+  tournament?: string; // tournament/league name
 }
 
 export class SerpApiClient {

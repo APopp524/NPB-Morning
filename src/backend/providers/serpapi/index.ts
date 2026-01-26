@@ -5,6 +5,7 @@
 
 import { SerpApiClient, SerpApiResponse } from './client';
 import { parseStandingsFromResponse, ParsedStanding } from './standings.parser';
+import { parseGamesFromResponse, ParsedGame } from './games.parser';
 import { mapSerpApiTeamNameToDatabaseTeam, getLeagueForTeamId } from './team-map';
 import { StandingInput } from '../../models/standing';
 import { getTeams } from '../../db/teams';
@@ -232,10 +233,112 @@ export class SerpApiProvider {
   }
 
   /**
+   * Fetch games using a robust fallback strategy (read-only).
+   * First queries "npb games" for live/same-day games.
+   * Falls back to "npb schedule" for upcoming scheduled games.
+   * Returns empty list with NO_GAMES status if neither query returns games.
+   * 
+   * This is a read-only operation that does not write to the database.
+   * Use this method when you need games data without database writes.
+   * 
+   * @returns Normalized response with status, sourceQuery, and games array
+   */
+  async fetchGamesReadOnly(): Promise<GamesFetchResult> {
+    if (!this.client) {
+      // Return NO_GAMES if client not initialized (graceful degradation)
+      console.log('[SerpApi] Games fetch: client not initialized, returning NO_GAMES');
+      return {
+        status: 'NO_GAMES',
+        sourceQuery: null,
+        games: [],
+      };
+    }
+
+    // Strategy 1: Try "npb games" for live/same-day games
+    const primaryQuery = 'npb games';
+    console.log(`[SerpApi] Games fetch: querying "${primaryQuery}"`);
+
+    try {
+      const primaryResponse = await this.client.search(primaryQuery);
+      const primaryGames = parseGamesFromResponse(primaryResponse, primaryQuery);
+
+      if (primaryGames.length > 0) {
+        console.log(
+          `[SerpApi] Games fetch: found ${primaryGames.length} games from "${primaryQuery}" (LIVE)`
+        );
+        return {
+          status: 'LIVE',
+          sourceQuery: primaryQuery,
+          games: primaryGames,
+        };
+      }
+
+      console.log(
+        `[SerpApi] Games fetch: no games found in "${primaryQuery}", trying fallback`
+      );
+    } catch (error) {
+      // Log error but continue to fallback
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.warn(
+        `[SerpApi] Games fetch: error querying "${primaryQuery}": ${errorMessage}. Trying fallback.`
+      );
+    }
+
+    // Strategy 2: Fallback to "npb schedule" for upcoming scheduled games
+    const fallbackQuery = 'npb schedule';
+    console.log(`[SerpApi] Games fetch: querying fallback "${fallbackQuery}"`);
+
+    try {
+      const fallbackResponse = await this.client.search(fallbackQuery);
+      const fallbackGames = parseGamesFromResponse(fallbackResponse, fallbackQuery);
+
+      if (fallbackGames.length > 0) {
+        console.log(
+          `[SerpApi] Games fetch: found ${fallbackGames.length} games from "${fallbackQuery}" (SCHEDULED)`
+        );
+        return {
+          status: 'SCHEDULED',
+          sourceQuery: fallbackQuery,
+          games: fallbackGames,
+        };
+      }
+
+      console.log(
+        `[SerpApi] Games fetch: no games found in "${fallbackQuery}"`
+      );
+    } catch (error) {
+      // Log error but continue to return NO_GAMES
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.warn(
+        `[SerpApi] Games fetch: error querying "${fallbackQuery}": ${errorMessage}`
+      );
+    }
+
+    // No games found in either query
+    console.log('[SerpApi] Games fetch: returning NO_GAMES status');
+    return {
+      status: 'NO_GAMES',
+      sourceQuery: null,
+      games: [],
+    };
+  }
+
+  /**
    * Fetch games for a given date.
    * Not implemented yet - placeholder for interface compliance.
+   * For read-only games fetching, use fetchGamesReadOnly() instead.
    */
   async fetchGames(date: string): Promise<never> {
     throw new Error('fetchGames not implemented yet');
   }
+}
+
+/**
+ * Result type for games fetch operation.
+ * Read-only response that does not require database writes.
+ */
+export interface GamesFetchResult {
+  status: 'LIVE' | 'SCHEDULED' | 'NO_GAMES';
+  sourceQuery: 'npb games' | 'npb schedule' | null;
+  games: ParsedGame[];
 }

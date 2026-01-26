@@ -1,10 +1,6 @@
 import { getStandings } from '@/src/lib/getStandings'
 import { GamesSection } from '@/src/components/games/GamesSection'
 import { StandingsSnapshot } from '@/src/components/StandingsSnapshot'
-import type { Game } from '@/src/types/games'
-
-// Placeholder games data - empty for now
-const games: Game[] = []
 
 function formatTodayDate(): string {
   const today = new Date()
@@ -41,7 +37,7 @@ export default async function Home() {
       </header>
 
       {/* Today's Games - PRIMARY SECTION */}
-      <GamesSection games={games} />
+      <GamesSection />
 
       {/* Standings Snapshot */}
       {standingsData && (
