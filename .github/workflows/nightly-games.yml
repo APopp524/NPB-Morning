@@ -1,4 +1,5 @@
 name: Nightly NPB Games
+# Fetches daily NPB game results
 
 on:
   schedule:
