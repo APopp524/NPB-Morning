@@ -8,9 +8,6 @@ interface StandingsSnapshotProps {
 }
 
 export function StandingsSnapshot({ central, pacific }: StandingsSnapshotProps) {
-  const topCentral = central.slice(0, 3)
-  const topPacific = pacific.slice(0, 3)
-
   const formatGamesBack = (gamesBack: number | null) => {
     if (gamesBack === null || gamesBack === 0) {
       return '—'
@@ -19,28 +16,28 @@ export function StandingsSnapshot({ central, pacific }: StandingsSnapshotProps) 
   }
 
   return (
-    <section className="mb-12">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">Standings</h2>
+    <section className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Standings</h2>
         <Link
           href="/standings"
-          className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
         >
-          View full standings →
+          View Details →
         </Link>
       </div>
       
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="space-y-5 flex-1">
         {/* Central League */}
         <div>
-          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
             Central League
           </h3>
-          <div className="space-y-2">
-            {topCentral.map((standing, index) => (
+          <div className="space-y-1">
+            {central.map((standing, index) => (
               <div
                 key={standing.id}
-                className="flex items-center justify-between py-2"
+                className="flex items-center justify-between py-1.5"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-gray-500 w-4">
@@ -63,14 +60,14 @@ export function StandingsSnapshot({ central, pacific }: StandingsSnapshotProps) 
 
         {/* Pacific League */}
         <div>
-          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
             Pacific League
           </h3>
-          <div className="space-y-2">
-            {topPacific.map((standing, index) => (
+          <div className="space-y-1">
+            {pacific.map((standing, index) => (
               <div
                 key={standing.id}
-                className="flex items-center justify-between py-2"
+                className="flex items-center justify-between py-1.5"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-gray-500 w-4">
@@ -91,6 +88,7 @@ export function StandingsSnapshot({ central, pacific }: StandingsSnapshotProps) 
           </div>
         </div>
       </div>
+
     </section>
   )
 }

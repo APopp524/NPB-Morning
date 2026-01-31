@@ -1,6 +1,8 @@
 import { getStandings } from '@/src/lib/getStandings'
+import { getNews } from '@/src/lib/getNews'
 import { GamesSection } from '@/src/components/games/GamesSection'
 import { StandingsSnapshot } from '@/src/components/StandingsSnapshot'
+import { NewsSection } from '@/src/components/NewsSection'
 
 function formatTodayDate(): string {
   const today = new Date()
@@ -13,17 +15,29 @@ function formatTodayDate(): string {
 }
 
 export default async function Home() {
-  // Fetch standings data
-  let standingsData
+  // Fetch standings and news data in parallel
+  const [standingsResult, newsResult] = await Promise.allSettled([
+    getStandings(),
+    getNews(),
+  ])
 
-  try {
-    standingsData = await getStandings()
-  } catch (error) {
-    console.error('Failed to fetch standings:', error)
-    // Continue without standings - we'll handle gracefully
+  const standingsData =
+    standingsResult.status === 'fulfilled' ? standingsResult.value : null
+  const newsData =
+    newsResult.status === 'fulfilled' ? newsResult.value : null
+
+  if (standingsResult.status === 'rejected') {
+    console.error('Failed to fetch standings:', standingsResult.reason)
+  }
+  if (newsResult.status === 'rejected') {
+    console.error('Failed to fetch news:', newsResult.reason)
   }
 
   const todayDate = formatTodayDate()
+
+  // Determine if we have content for the two-column layout
+  const hasStandings = standingsData !== null
+  const hasNews = newsData !== null && newsData.articles.length > 0
 
   return (
     <>
@@ -39,12 +53,29 @@ export default async function Home() {
       {/* Today's Games - PRIMARY SECTION */}
       <GamesSection />
 
-      {/* Standings Snapshot */}
-      {standingsData && (
-        <StandingsSnapshot
-          central={standingsData.central}
-          pacific={standingsData.pacific}
-        />
+      {/* Standings & News - Two Column Layout */}
+      {(hasStandings || hasNews) && (
+        <div className="grid md:grid-cols-5 gap-8 lg:gap-12 items-stretch">
+          {/* Standings - Left Column (2/5 width on md+) */}
+          {hasStandings && (
+            <div className="md:col-span-2 flex">
+              <StandingsSnapshot
+                central={standingsData.central}
+                pacific={standingsData.pacific}
+              />
+            </div>
+          )}
+
+          {/* News - Right Column (3/5 width on md+) */}
+          {hasNews && (
+            <div className={`flex ${hasStandings ? 'md:col-span-3' : 'md:col-span-5'}`}>
+              <NewsSection
+                initialArticles={newsData.articles}
+                initialHasMore={newsData.hasMore ?? false}
+              />
+            </div>
+          )}
+        </div>
       )}
     </>
   )

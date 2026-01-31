@@ -14,7 +14,8 @@
     "test:watch": "vitest --watch",
     "debug:standings": "tsx src/scripts/debug-serpapi-standings.ts",
     "standings:run": "tsx src/scripts/run-standings.ts",
-    "games:run": "tsx src/scripts/run-games.ts"
+    "games:run": "tsx src/scripts/run-games.ts",
+    "news:run": "tsx src/scripts/run-news.ts"
   },
   "keywords": [],
   "author": "",
