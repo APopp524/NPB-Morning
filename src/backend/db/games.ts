@@ -34,7 +34,7 @@ export async function upsertGame(input: GameInput): Promise<Game> {
   if (error) {
     throw new Error(`Failed to upsert game: ${error.message}`);
   }
-console.log(data);
+
   return {
     id: data.id,
     date: new Date(data.date),
