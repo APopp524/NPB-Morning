@@ -34,8 +34,14 @@ export function GameCard({
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-5">
       {/* Date & Time Header */}
-      <div className="text-xs text-gray-500 font-medium mb-4 text-center">
-        {gameDate}{gameTime && ` | ${gameTime}`}
+      <div className="flex items-center justify-center gap-2 mb-4 text-xs">
+        <span className="text-gray-500 font-medium">{gameDate}</span>
+        {gameTime && (
+          <>
+            <span className="text-gray-300">•</span>
+            <span className="text-gray-400">{gameTime}</span>
+          </>
+        )}
       </div>
 
       {/* Matchup */}

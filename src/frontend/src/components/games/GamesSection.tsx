@@ -27,7 +27,12 @@ export async function GamesSection() {
   // Render games in a responsive grid
   return (
     <section className="mb-12">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">{heading}</h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-gray-900">{heading}</h2>
+        {!hasCompletedGames && (
+          <p className="text-xs text-gray-400 mt-1">All times in Eastern Standard Time (EST)</p>
+        )}
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {gamesData.games.map((game: GamesResponse['games'][0], index: number) => (
           <GameCard
