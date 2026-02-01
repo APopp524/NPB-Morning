@@ -46,7 +46,7 @@ function NewsCard({ article }: { article: NewsArticle }) {
       href={article.link}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex gap-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors -mx-2 px-2 rounded"
+      className="group flex gap-3 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors rounded min-w-0"
     >
       {/* Thumbnail */}
       {thumbnail && (
@@ -78,7 +78,7 @@ function NewsCard({ article }: { article: NewsArticle }) {
             />
           )}
           {article.source_name && (
-            <span className="text-xs text-gray-500 truncate">
+            <span className="text-xs text-gray-500 truncate max-w-24 sm:max-w-32">
               {article.source_name}
             </span>
           )}
@@ -139,10 +139,10 @@ export function NewsSection({ initialArticles, initialHasMore }: NewsSectionProp
   const hasPrev = page > 0
 
   return (
-    <section className="flex flex-col h-full w-full">
+    <section className="flex flex-col h-full w-full min-w-0 overflow-hidden">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Latest News</h2>
       
-      <div className={`space-y-1 flex-1 ${isLoading ? 'opacity-50' : ''}`}>
+      <div className={`space-y-1 flex-1 min-w-0 ${isLoading ? 'opacity-50' : ''}`}>
         {articles.map((article) => (
           <NewsCard key={article.id} article={article} />
         ))}

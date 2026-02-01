@@ -68,7 +68,7 @@ export default async function Home() {
 
           {/* News - Right Column (3/5 width on md+) */}
           {hasNews && (
-            <div className={`flex ${hasStandings ? 'md:col-span-3' : 'md:col-span-5'}`}>
+            <div className={`flex min-w-0 ${hasStandings ? 'md:col-span-3' : 'md:col-span-5'}`}>
               <NewsSection
                 initialArticles={newsData.articles}
                 initialHasMore={newsData.hasMore ?? false}

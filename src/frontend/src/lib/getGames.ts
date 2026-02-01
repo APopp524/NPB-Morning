@@ -21,6 +21,8 @@ export interface GamesResponse {
       name_en: string;
       thumbnail_url: string | null;
     };
+    home_score: number | null;
+    away_score: number | null;
     venue_name: string | null;
   }>;
 }
@@ -49,6 +51,8 @@ export async function getGames(): Promise<GamesResponse> {
       status,
       home_team_id,
       away_team_id,
+      home_score,
+      away_score,
       home_teams:home_team_id!inner (
         id,
         name_en,
@@ -102,6 +106,8 @@ export async function getGames(): Promise<GamesResponse> {
           name_en: awayTeam?.name_en || 'Unknown',
           thumbnail_url: awayTeam?.thumbnail_url || null,
         },
+        home_score: game.home_score ?? null,
+        away_score: game.away_score ?? null,
         venue_name: null,
       }
     })
@@ -122,6 +128,8 @@ export async function getGames(): Promise<GamesResponse> {
       status,
       home_team_id,
       away_team_id,
+      home_score,
+      away_score,
       home_teams:home_team_id!inner (
         id,
         name_en,
@@ -182,6 +190,8 @@ export async function getGames(): Promise<GamesResponse> {
         name_en: awayTeam?.name_en || 'Unknown',
         thumbnail_url: awayTeam?.thumbnail_url || null,
       },
+      home_score: game.home_score ?? null,
+      away_score: game.away_score ?? null,
       venue_name: null,
     }
   })
