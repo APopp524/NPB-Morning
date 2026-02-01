@@ -67,6 +67,10 @@ export class SerpApiClient {
     url.searchParams.set('engine', 'google');
     url.searchParams.set('q', query);
     url.searchParams.set('api_key', this.apiKey);
+    // Set location to New York to get consistent EST times for game schedules
+    url.searchParams.set('location', 'New York, United States');
+    url.searchParams.set('gl', 'us');
+    url.searchParams.set('hl', 'en');
 
     const response = await fetch(url.toString());
 

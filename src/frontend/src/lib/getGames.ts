@@ -48,6 +48,7 @@ export async function getGames(): Promise<GamesResponse> {
     .select(`
       id,
       date,
+      start_time,
       status,
       home_team_id,
       away_team_id,
@@ -92,12 +93,9 @@ export async function getGames(): Promise<GamesResponse> {
         year: 'numeric',
       })
 
-      // No time stored in database, set to null
-      const gameTime = null
-
       return {
         game_date: gameDateStr,
-        game_time: gameTime,
+        game_time: game.start_time || null,
         home_team: {
           name_en: homeTeam?.name_en || 'Unknown',
           thumbnail_url: homeTeam?.thumbnail_url || null,
@@ -125,6 +123,7 @@ export async function getGames(): Promise<GamesResponse> {
     .select(`
       id,
       date,
+      start_time,
       status,
       home_team_id,
       away_team_id,
@@ -176,12 +175,9 @@ export async function getGames(): Promise<GamesResponse> {
       year: 'numeric',
     })
 
-    // No time stored in database, set to null
-    const gameTime = null
-
     return {
       game_date: gameDateStr,
-      game_time: gameTime,
+      game_time: game.start_time || null,
       home_team: {
         name_en: homeTeam?.name_en || 'Unknown',
         thumbnail_url: homeTeam?.thumbnail_url || null,

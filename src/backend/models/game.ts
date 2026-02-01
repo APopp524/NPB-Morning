@@ -1,6 +1,7 @@
 export interface Game {
   id: string;
   date: Date;
+  startTime: string | null;
   homeTeamId: string;
   awayTeamId: string;
   homeScore: number | null;
@@ -18,6 +19,7 @@ export type ISODateString = string;
 
 export interface GameInput {
   date: ISODateString; // YYYY-MM-DD format
+  startTime: string | null; // e.g., "5:00 AM" in EST
   homeTeamId: string;
   awayTeamId: string;
   homeScore: number | null;

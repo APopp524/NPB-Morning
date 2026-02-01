@@ -201,6 +201,7 @@ async function runGamesForDate(dateStr: string): Promise<void> {
 
       gameInputs.push({
         date: gameDate,
+        startTime: parsedGame.game_time, // e.g., "5:00 AM" in EST
         homeTeamId,
         awayTeamId,
         homeScore: null, // Scores not available from SerpApi games endpoint yet

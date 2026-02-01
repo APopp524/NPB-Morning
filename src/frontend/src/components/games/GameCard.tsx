@@ -12,6 +12,7 @@ interface GameCardProps {
   homeScore: number | null
   awayScore: number | null
   gameDate: string
+  gameTime?: string | null
   venue?: string | null
 }
 
@@ -21,6 +22,7 @@ export function GameCard({
   homeScore,
   awayScore,
   gameDate,
+  gameTime,
   venue,
 }: GameCardProps) {
   const hasScore = homeScore !== null && awayScore !== null
@@ -31,9 +33,9 @@ export function GameCard({
 
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-5">
-      {/* Date Header */}
+      {/* Date & Time Header */}
       <div className="text-xs text-gray-500 font-medium mb-4 text-center">
-        {gameDate}
+        {gameDate}{gameTime && ` | ${gameTime}`}
       </div>
 
       {/* Matchup */}

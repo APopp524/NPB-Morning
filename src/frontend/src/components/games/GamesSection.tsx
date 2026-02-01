@@ -37,6 +37,7 @@ export async function GamesSection() {
             homeScore={game.home_score}
             awayScore={game.away_score}
             gameDate={game.game_date}
+            gameTime={game.game_time}
             venue={game.venue_name}
           />
         ))}

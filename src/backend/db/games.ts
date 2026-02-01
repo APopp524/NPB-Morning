@@ -16,6 +16,7 @@ export async function upsertGame(input: GameInput): Promise<Game> {
       {
         id,
         date: dateISO,
+        start_time: input.startTime,
         home_team_id: input.homeTeamId,
         away_team_id: input.awayTeamId,
         home_score: input.homeScore,
@@ -33,10 +34,11 @@ export async function upsertGame(input: GameInput): Promise<Game> {
   if (error) {
     throw new Error(`Failed to upsert game: ${error.message}`);
   }
-
+console.log(data);
   return {
     id: data.id,
     date: new Date(data.date),
+    startTime: data.start_time,
     homeTeamId: data.home_team_id,
     awayTeamId: data.away_team_id,
     homeScore: data.home_score,
