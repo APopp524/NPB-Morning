@@ -3,7 +3,7 @@ name: Nightly NPB Games
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '30 13 * * *'
   workflow_dispatch: {}
 
 jobs:

@@ -2,7 +2,7 @@ name: Nightly NPB Standings
 
 on:
   schedule:
-    - cron: '15 3 * * *'
+    - cron: '45 13 * * *'
   workflow_dispatch: {}
 
 jobs:

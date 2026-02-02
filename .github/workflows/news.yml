@@ -2,7 +2,7 @@ name: Nightly NPB News
 
 on:
   schedule:
-    - cron: '30 3 * * *'
+    - cron: '00 14 * * *'
   workflow_dispatch: {}
 
 jobs:
