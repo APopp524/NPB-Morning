@@ -2,10 +2,10 @@ import { getSupabaseClient } from './supabase'
 import type { NewsArticle, NewsResponse } from '@/src/types/news'
 
 const PAGE_SIZE = 6
-const DAYS_BACK = 7
+const DAYS_BACK = 30
 
 /**
- * Get the cutoff date for news articles (7 days ago)
+ * Get the cutoff date for news articles (30 days ago)
  */
 function getCutoffDate(): Date {
   const cutoffDate = new Date()
@@ -15,15 +15,17 @@ function getCutoffDate(): Date {
 
 /**
  * Fetch recent news articles from the database.
- * Returns up to 5 articles from the last 7 days, plus info about whether more exist.
+ * Filters by published_at (with fetched_at fallback for articles without a publish date).
+ * Returns up to PAGE_SIZE articles from the last 30 days, plus info about whether more exist.
  * 
  * @returns NewsResponse with articles array, or null if no articles found
  */
 export async function getNews(): Promise<NewsResponse | null> {
   const supabase = getSupabaseClient()
-  const cutoffDate = getCutoffDate()
+  const cutoffISO = getCutoffDate().toISOString()
 
   // Fetch one extra to check if there are more articles
+  // Filter: published_at >= cutoff, OR (published_at is null AND fetched_at >= cutoff)
   const { data, error } = await supabase
     .from('news_articles')
     .select(`
@@ -37,7 +39,7 @@ export async function getNews(): Promise<NewsResponse | null> {
       published_at,
       fetched_at
     `)
-    .gte('fetched_at', cutoffDate.toISOString())
+    .or(`published_at.gte.${cutoffISO},and(published_at.is.null,fetched_at.gte.${cutoffISO})`)
     .order('published_at', { ascending: false, nullsFirst: false })
     .limit(PAGE_SIZE + 1)
 
@@ -83,10 +85,11 @@ export async function getNews(): Promise<NewsResponse | null> {
  */
 export async function getNewsPage(page: number): Promise<NewsResponse | null> {
   const supabase = getSupabaseClient()
-  const cutoffDate = getCutoffDate()
+  const cutoffISO = getCutoffDate().toISOString()
   const offset = page * PAGE_SIZE
 
   // Fetch one extra to check if there are more articles
+  // Filter: published_at >= cutoff, OR (published_at is null AND fetched_at >= cutoff)
   const { data, error } = await supabase
     .from('news_articles')
     .select(`
@@ -100,7 +103,7 @@ export async function getNewsPage(page: number): Promise<NewsResponse | null> {
       published_at,
       fetched_at
     `)
-    .gte('fetched_at', cutoffDate.toISOString())
+    .or(`published_at.gte.${cutoffISO},and(published_at.is.null,fetched_at.gte.${cutoffISO})`)
     .order('published_at', { ascending: false, nullsFirst: false })
     .range(offset, offset + PAGE_SIZE)
 

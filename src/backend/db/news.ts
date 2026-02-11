@@ -90,23 +90,26 @@ export async function upsertNewsArticles(inputs: NewsArticleInput[]): Promise<Ne
 
 /**
  * Get recent news articles.
+ * Filters by published_at (with fetched_at fallback for articles without a publish date).
  * @param limit Maximum number of articles to return (default: 5)
- * @param daysBack Number of days to look back (default: 7)
+ * @param daysBack Number of days to look back (default: 30)
  */
 export async function getRecentNewsArticles(
   limit: number = 5,
-  daysBack: number = 7
+  daysBack: number = 30
 ): Promise<NewsArticle[]> {
   const supabase = getSupabaseClient();
   
   // Calculate the cutoff date
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+  const cutoffISO = cutoffDate.toISOString();
 
+  // Filter: published_at >= cutoff, OR (published_at is null AND fetched_at >= cutoff)
   const { data, error } = await supabase
     .from('news_articles')
     .select('*')
-    .gte('fetched_at', cutoffDate.toISOString())
+    .or(`published_at.gte.${cutoffISO},and(published_at.is.null,fetched_at.gte.${cutoffISO})`)
     .order('published_at', { ascending: false, nullsFirst: false })
     .limit(limit);
 
@@ -123,19 +126,23 @@ export async function getRecentNewsArticles(
 
 /**
  * Delete news articles older than a specified number of days.
- * Used for cleanup to prevent table from growing indefinitely.
- * @param daysOld Number of days to keep (default: 7)
+ * Uses published_at as the primary age indicator, with fetched_at as fallback
+ * for articles without a publish date. This prevents stale articles from surviving
+ * cleanup just because they were re-fetched recently.
+ * @param daysOld Number of days to keep (default: 30)
  */
-export async function deleteOldNewsArticles(daysOld: number = 7): Promise<number> {
+export async function deleteOldNewsArticles(daysOld: number = 30): Promise<number> {
   const supabase = getSupabaseClient();
   
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+  const cutoffISO = cutoffDate.toISOString();
 
+  // Delete where: published_at < cutoff, OR (published_at is null AND fetched_at < cutoff)
   const { data, error } = await supabase
     .from('news_articles')
     .delete()
-    .lt('fetched_at', cutoffDate.toISOString())
+    .lt('published_at', cutoffDate.toISOString())
     .select('id');
 
   if (error) {

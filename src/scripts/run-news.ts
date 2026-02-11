@@ -145,9 +145,9 @@ async function runNewsFetch(): Promise<void> {
   const dbRows = await upsertNewsArticles(articleInputs);
   log('info', `Upsert complete (${dbRows.length} rows)`);
 
-  // Clean up old articles (keep last 7 days)
+  // Clean up old articles (keep last 30 days)
   log('info', 'Cleaning up old articles...');
-  const deletedCount = await deleteOldNewsArticles(7);
+  const deletedCount = await deleteOldNewsArticles(30);
   if (deletedCount > 0) {
     log('info', `Deleted ${deletedCount} old article(s)`);
   }
