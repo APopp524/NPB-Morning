@@ -29,6 +29,7 @@ export async function upsertNewsArticle(input: NewsArticleInput): Promise<NewsAr
         thumbnail: input.thumbnail ?? null,
         thumbnail_small: input.thumbnailSmall ?? null,
         published_at: input.publishedAt?.toISOString() ?? null,
+        team_id: input.teamId ?? null,
         fetched_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
@@ -66,6 +67,7 @@ export async function upsertNewsArticles(inputs: NewsArticleInput[]): Promise<Ne
     thumbnail: input.thumbnail ?? null,
     thumbnail_small: input.thumbnailSmall ?? null,
     published_at: input.publishedAt?.toISOString() ?? null,
+    team_id: input.teamId ?? null,
     fetched_at: now,
     updated_at: now,
   }));
@@ -165,6 +167,7 @@ function mapRowToNewsArticle(row: any): NewsArticle {
     thumbnail: row.thumbnail,
     thumbnailSmall: row.thumbnail_small,
     publishedAt: row.published_at ? new Date(row.published_at) : null,
+    teamId: row.team_id ?? null,
     fetchedAt: new Date(row.fetched_at),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),

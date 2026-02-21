@@ -8,6 +8,7 @@
  */
 
 import type { NewsArticleInput } from '../../models/news-article';
+import { matchTeamInText } from './team-map';
 
 /**
  * Raw news result from Google News API
@@ -52,6 +53,7 @@ export interface ParsedNewsArticle {
   thumbnail: string | null;
   thumbnailSmall: string | null;
   publishedAt: Date | null;
+  teamId: string | null;
 }
 
 /**
@@ -109,6 +111,7 @@ export function parseNewsFromResponse(
       thumbnail: result.thumbnail ?? null,
       thumbnailSmall: result.thumbnail_small ?? null,
       publishedAt,
+      teamId: matchTeamInText(result.title),
     });
 
     // Stop if we've reached the max
@@ -132,5 +135,6 @@ export function toNewsArticleInputs(articles: ParsedNewsArticle[]): NewsArticleI
     thumbnail: article.thumbnail,
     thumbnailSmall: article.thumbnailSmall,
     publishedAt: article.publishedAt,
+    teamId: article.teamId,
   }));
 }

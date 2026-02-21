@@ -37,7 +37,8 @@ export async function getNews(): Promise<NewsResponse | null> {
       thumbnail,
       thumbnail_small,
       published_at,
-      fetched_at
+      fetched_at,
+      team_id
     `)
     .or(`published_at.gte.${cutoffISO},and(published_at.is.null,fetched_at.gte.${cutoffISO})`)
     .order('published_at', { ascending: false, nullsFirst: false })
@@ -66,6 +67,7 @@ export async function getNews(): Promise<NewsResponse | null> {
     thumbnail_small: row.thumbnail_small,
     published_at: row.published_at,
     fetched_at: row.fetched_at,
+    team_id: row.team_id ?? null,
   }))
 
   // Get the most recent fetched_at for display
@@ -101,7 +103,8 @@ export async function getNewsPage(page: number): Promise<NewsResponse | null> {
       thumbnail,
       thumbnail_small,
       published_at,
-      fetched_at
+      fetched_at,
+      team_id
     `)
     .or(`published_at.gte.${cutoffISO},and(published_at.is.null,fetched_at.gte.${cutoffISO})`)
     .order('published_at', { ascending: false, nullsFirst: false })
@@ -134,6 +137,7 @@ export async function getNewsPage(page: number): Promise<NewsResponse | null> {
     thumbnail_small: row.thumbnail_small,
     published_at: row.published_at,
     fetched_at: row.fetched_at,
+    team_id: row.team_id ?? null,
   }))
 
   return {

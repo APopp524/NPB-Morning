@@ -12,6 +12,7 @@ export interface NewsArticle {
   thumbnail_small: string | null
   published_at: string | null
   fetched_at: string
+  team_id: string | null
 }
 
 export interface NewsResponse {

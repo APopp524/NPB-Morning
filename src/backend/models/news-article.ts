@@ -11,6 +11,7 @@ export interface NewsArticle {
   thumbnail: string | null;
   thumbnailSmall: string | null;
   publishedAt: Date | null;
+  teamId: string | null;
   fetchedAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -24,4 +25,5 @@ export interface NewsArticleInput {
   thumbnail?: string | null;
   thumbnailSmall?: string | null;
   publishedAt?: Date | null;
+  teamId?: string | null;
 }

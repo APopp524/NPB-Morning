@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Team } from '@/src/types/teams'
 import { TeamIdentity } from './TeamIdentity'
 
@@ -21,16 +22,17 @@ export function TeamList({ title, teams }: TeamListProps) {
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {teams.map((team) => (
-          <div
+          <Link
             key={team.id}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            href={`/teams/${team.id}`}
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow block"
           >
             <TeamIdentity
               name={team.name_en}
               thumbnailUrl={team.thumbnail_url}
             />
             <div className="text-sm text-gray-500 mt-1">{team.name}</div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

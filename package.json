@@ -15,7 +15,8 @@
     "debug:standings": "tsx src/scripts/debug-serpapi-standings.ts",
     "standings:run": "tsx src/scripts/run-standings.ts",
     "games:run": "tsx src/scripts/run-games.ts",
-    "news:run": "tsx src/scripts/run-news.ts"
+    "news:run": "tsx src/scripts/run-news.ts",
+    "videos:run": "tsx src/scripts/run-videos.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "dotenv": "^17.2.3",
+    "fast-xml-parser": "^5.3.7",
     "fastify": "^4.24.3"
   },
   "devDependencies": {

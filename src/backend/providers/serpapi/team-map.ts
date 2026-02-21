@@ -111,6 +111,37 @@ export function getLeagueForTeamId(teamId: string): 'central' | 'pacific' {
 }
 
 /**
+ * Reverse lookup: maps lowercase team name fragments to team IDs.
+ * Used for best-effort matching of team names in article titles.
+ * Entries are ordered longest-first so more specific names match before short ones.
+ */
+const TEAM_NAME_FRAGMENTS: Array<[string, string]> = Object.entries(SERPAPI_TEAM_MAP)
+  .map(([name, id]) => [name.toLowerCase(), id] as [string, string])
+  .sort((a, b) => b[0].length - a[0].length);
+
+/**
+ * Attempt to match a single team in a text string (e.g. article title).
+ * Returns the team ID if exactly one team is mentioned, or null if zero or multiple teams match.
+ * This prevents ambiguous tagging for articles like "Giants vs Tigers".
+ */
+export function matchTeamInText(text: string): string | null {
+  const lowerText = text.toLowerCase();
+  const matchedIds = new Set<string>();
+
+  for (const [fragment, teamId] of TEAM_NAME_FRAGMENTS) {
+    if (lowerText.includes(fragment)) {
+      matchedIds.add(teamId);
+    }
+  }
+
+  if (matchedIds.size === 1) {
+    return [...matchedIds][0];
+  }
+
+  return null;
+}
+
+/**
  * Map SerpApi team name to database team ID.
  * Prefers matching against name_en from the database, then falls back to fuzzy/partial matching.
  * 
