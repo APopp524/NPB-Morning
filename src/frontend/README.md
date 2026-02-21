@@ -1,6 +1,6 @@
 # NPB Morning Web
 
-Frontend for NPB Morning - a read-only web app displaying Nippon Professional Baseball standings and teams.
+Frontend for NPB Morning — a read-only Next.js app displaying Nippon Professional Baseball standings, teams, news, and videos.
 
 ## Setup
 
@@ -29,8 +29,33 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 
 ## Project Structure
 
-- `app/` - Next.js App Router pages and layouts
-- `src/components/` - React components
-- `src/lib/` - Utility functions (Supabase client)
-- `src/types/` - TypeScript type definitions
+```
+app/
+  page.tsx                    # Home (games, standings, news)
+  teams/page.tsx              # Teams list
+  teams/[id]/page.tsx         # Team detail page
+src/
+  components/
+    team-detail/
+      TeamHero.tsx            # Team banner with logo and league
+      TeamInfo.tsx            # Stadium, city, social links
+      TeamNews.tsx            # Team-specific news articles
+      TeamVideos.tsx          # Latest YouTube videos
+    TeamList.tsx              # Team grid for the teams page
+    ...
+  lib/
+    supabase.ts               # Supabase client
+    getTeam.ts                # Fetch single team detail
+    getTeamNews.ts            # Fetch team-tagged news articles
+    getTeamVideos.ts          # Fetch team YouTube videos
+    getNews.ts                # Fetch general news feed
+    teamLogos.ts              # Local logo path helpers
+    ...
+  types/
+    teams.ts                  # Team, TeamDetail, YouTubeVideo
+    news.ts                   # NewsArticle, NewsResponse
+public/
+  logos/                      # Small 48px team logos
+  teams/{team-id}/logo.png    # High-res team logos for detail pages
+```
 

@@ -13,7 +13,6 @@ export interface TeamDetail extends Team {
   twitter_url: string | null
   instagram_url: string | null
   youtube_channel_url: string | null
-  photo_url: string | null
 }
 
 export interface YouTubeVideo {

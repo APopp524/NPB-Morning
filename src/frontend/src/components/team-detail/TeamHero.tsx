@@ -17,17 +17,7 @@ export function TeamHero({ team }: TeamHeroProps) {
 
   return (
     <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-800 to-gray-950 text-white">
-      {team.photo_url && (
-        <div className="absolute inset-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={team.photo_url}
-            alt=""
-            className="w-full h-full object-cover opacity-30"
-          />
-        </div>
-      )}
-      <div className="relative px-6 py-10 sm:px-10 sm:py-14 flex items-center gap-6">
+      <div className="px-6 py-10 sm:px-10 sm:py-14 flex items-center gap-6">
         {shouldShowLogo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

@@ -4,6 +4,21 @@ interface TeamVideosProps {
   videos: YouTubeVideo[]
 }
 
+function formatVideoDate(isoDate: string | null): string {
+  if (!isoDate) return ''
+  const date = new Date(isoDate)
+  if (isNaN(date.getTime())) return ''
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffHours < 1) return 'Just now'
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 function VideoCard({ video }: { video: YouTubeVideo }) {
   return (
     <a
@@ -28,7 +43,6 @@ function VideoCard({ video }: { video: YouTubeVideo }) {
             </svg>
           </div>
         )}
-        {/* Play button overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
             <svg
@@ -44,21 +58,11 @@ function VideoCard({ video }: { video: YouTubeVideo }) {
       <h3 className="mt-2 text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
         {video.title}
       </h3>
-      <div className="flex items-center gap-2 mt-1">
-        {video.channelName && (
-          <span className="text-xs text-gray-500 truncate">
-            {video.channelName}
-          </span>
-        )}
-        {video.publishedAt && (
-          <>
-            {video.channelName && (
-              <span className="text-xs text-gray-400">&middot;</span>
-            )}
-            <span className="text-xs text-gray-500">{video.publishedAt}</span>
-          </>
-        )}
-      </div>
+      {video.publishedAt && (
+        <span className="text-xs text-gray-500 mt-1 block">
+          {formatVideoDate(video.publishedAt)}
+        </span>
+      )}
     </a>
   )
 }
@@ -68,10 +72,10 @@ export function TeamVideos({ videos }: TeamVideosProps) {
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-5">
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
-          Game Highlights
+          Latest Videos
         </h2>
         <p className="text-sm text-gray-500">
-          No highlight videos available right now.
+          No videos available right now.
         </p>
       </div>
     )
@@ -80,7 +84,7 @@ export function TeamVideos({ videos }: TeamVideosProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-5">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        Game Highlights
+        Latest Videos
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {videos.map((video) => (

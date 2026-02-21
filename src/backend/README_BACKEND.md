@@ -4,10 +4,11 @@ A clean MVP backend for NPB (Nippon Professional Baseball) data aggregation.
 
 ## Tech Stack
 
-- **Node.js** with **TypeScript**
+- **Node.js 20+** with **TypeScript**
 - **Fastify** web framework
 - **Supabase** (PostgreSQL)
-- **SerpApi** as data provider (supports both mock and live modes)
+- **SerpApi** for games, standings, and news (supports mock and live modes)
+- **YouTube RSS feeds** for team videos (no API key required)
 
 ## Setup
 
@@ -397,21 +398,44 @@ Tests use mocked responses and don't make real API calls. The test suite include
 - **Testable**: All external dependencies are mocked in tests
 - **Mode switching**: Providers support both mock and live modes for flexible development and production use
 
+## Cron Scripts
+
+| Script | Command | Data Source | Description |
+|--------|---------|-------------|-------------|
+| `run-standings.ts` | `npm run standings:run` | SerpApi | Fetches league standings |
+| `run-games.ts` | `npm run games:run` | SerpApi | Fetches daily game results |
+| `run-news.ts` | `npm run news:run` | SerpApi (Google News) | Fetches NPB news articles |
+| `run-videos.ts` | `npm run videos:run` | YouTube RSS | Fetches latest videos from each team's official YouTube channel |
+
+### Video Cron (`run-videos.ts`)
+
+Fetches the 6 most recent videos from each NPB team's official YouTube channel using their public RSS feed. Each team's `youtube_channel_id` is stored in the `teams` table and was resolved from their `youtube_channel_url`.
+
+- **No API key required** — uses the free YouTube RSS endpoint
+- **Idempotent** — uses deterministic IDs for upserts
+- **Stale cleanup** — removes videos no longer in the RSS feed
+- **Old cleanup** — deletes videos with `fetched_at` older than 30 days
+
 ## Project Structure
 
 ```
 src/
   backend/
-    models/          # Domain models (Team, Game, Standing)
-    providers/       # Data provider interfaces and implementations
-    db/              # Supabase database utilities
-    routes/          # Fastify route handlers
-    utils/           # Shared utilities
-    index.ts         # Fastify server entry point
-  __tests__/         # Test files and fixtures
+    models/            # Domain models (Team, Game, Standing, TeamVideo, NewsArticle)
+    providers/
+      serpapi/          # SerpApi client, parsers (standings, games, news), team-map
+      youtube-rss.ts    # YouTube RSS feed parser for team videos
+    db/                 # Supabase database functions (client, news, team-videos)
+    routes/             # Fastify route handlers
+    utils/              # Shared utilities
+    index.ts            # Fastify server entry point
+  scripts/
+    run-standings.ts    # Standings cron runner
+    run-games.ts        # Games cron runner
+    run-news.ts         # News cron runner
+    run-videos.ts       # Videos cron runner
+  __tests__/            # Test files and fixtures
 supabase/
-  migrations/        # Database migrations
-    001_initial_schema.sql  # Initial schema (tables)
-    002_seed_teams.sql      # Teams seed data
+  migrations/           # Database migrations (001–013)
 ```
 

@@ -11,7 +11,7 @@ export async function getTeam(id: string): Promise<TeamDetail> {
   const { data, error } = await supabase
     .from('teams')
     .select(
-      'id, name, name_en, league, stadium, city, website_url, twitter_url, instagram_url, youtube_channel_url, photo_url'
+      'id, name, name_en, league, stadium, city, website_url, twitter_url, instagram_url, youtube_channel_url'
     )
     .eq('id', id)
     .single()
@@ -36,6 +36,5 @@ export async function getTeam(id: string): Promise<TeamDetail> {
     twitter_url: data.twitter_url ?? null,
     instagram_url: data.instagram_url ?? null,
     youtube_channel_url: data.youtube_channel_url ?? null,
-    photo_url: data.photo_url ?? null,
   }
 }
