@@ -6,6 +6,7 @@
  */
 
 import { getSupabaseClient } from './supabase'
+import { getTeamLogoUrl } from './teamLogos'
 
 export interface GamesResponse {
   status: 'LIVE' | 'SCHEDULED' | 'NO_GAMES';
@@ -56,13 +57,11 @@ export async function getGames(): Promise<GamesResponse> {
       away_score,
       home_teams:home_team_id!inner (
         id,
-        name_en,
-        thumbnail_url
+        name_en
       ),
       away_teams:away_team_id!inner (
         id,
-        name_en,
-        thumbnail_url
+        name_en
       )
     `)
     .eq('date', todayStr)
@@ -98,11 +97,11 @@ export async function getGames(): Promise<GamesResponse> {
         game_time: game.start_time || null,
         home_team: {
           name_en: homeTeam?.name_en || 'Unknown',
-          thumbnail_url: homeTeam?.thumbnail_url || null,
+          thumbnail_url: getTeamLogoUrl(homeTeam?.id),
         },
         away_team: {
           name_en: awayTeam?.name_en || 'Unknown',
-          thumbnail_url: awayTeam?.thumbnail_url || null,
+          thumbnail_url: getTeamLogoUrl(awayTeam?.id),
         },
         home_score: game.home_score ?? null,
         away_score: game.away_score ?? null,
@@ -131,13 +130,11 @@ export async function getGames(): Promise<GamesResponse> {
       away_score,
       home_teams:home_team_id!inner (
         id,
-        name_en,
-        thumbnail_url
+        name_en
       ),
       away_teams:away_team_id!inner (
         id,
-        name_en,
-        thumbnail_url
+        name_en
       )
     `)
     .gte('date', todayStr)
@@ -180,11 +177,11 @@ export async function getGames(): Promise<GamesResponse> {
       game_time: game.start_time || null,
       home_team: {
         name_en: homeTeam?.name_en || 'Unknown',
-        thumbnail_url: homeTeam?.thumbnail_url || null,
+        thumbnail_url: getTeamLogoUrl(homeTeam?.id),
       },
       away_team: {
         name_en: awayTeam?.name_en || 'Unknown',
-        thumbnail_url: awayTeam?.thumbnail_url || null,
+        thumbnail_url: getTeamLogoUrl(awayTeam?.id),
       },
       home_score: game.home_score ?? null,
       away_score: game.away_score ?? null,

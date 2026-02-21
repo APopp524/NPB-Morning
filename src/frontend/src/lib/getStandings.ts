@@ -1,4 +1,5 @@
 import { getSupabaseClient } from './supabase'
+import { getTeamLogoUrl } from './teamLogos'
 import type { StandingWithTeam } from '@/src/types/standingsWithTeam'
 
 export interface GroupedStandings {
@@ -42,8 +43,7 @@ export async function getStandings(): Promise<GroupedStandings> {
       teams!inner (
         id,
         name,
-        name_en,
-        thumbnail_url
+        name_en
       )
     `)
     .eq('season', latestSeason)
@@ -72,9 +72,7 @@ export async function getStandings(): Promise<GroupedStandings> {
         id: team.id,
         name: team.name,
         name_en: team.name_en,
-      }
-      if (team.thumbnail_url != null) {
-        teamData.thumbnail_url = team.thumbnail_url
+        thumbnail_url: getTeamLogoUrl(team.id),
       }
 
       const result: StandingWithTeam = {

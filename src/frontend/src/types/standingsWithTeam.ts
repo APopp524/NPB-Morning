@@ -12,7 +12,6 @@ export interface StandingWithTeam {
     id: string
     name: string
     name_en: string
-    thumbnail_url?: string | null
+    thumbnail_url: string | null
   }
 }
-

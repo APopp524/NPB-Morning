@@ -1,4 +1,5 @@
 import { getSupabaseClient } from './supabase'
+import { getTeamLogoUrl } from './teamLogos'
 import type { Team } from '@/src/types/teams'
 
 export interface GroupedTeams {
@@ -12,7 +13,7 @@ export async function getTeams(): Promise<GroupedTeams> {
   // Fetch all teams
   const { data: teamsData, error: teamsError } = await supabase
     .from('teams')
-    .select('id, name, name_en, league, thumbnail_url')
+    .select('id, name, name_en, league')
     .order('name_en', { ascending: true })
 
   if (teamsError) {
@@ -29,7 +30,7 @@ export async function getTeams(): Promise<GroupedTeams> {
     name: team.name,
     name_en: team.name_en,
     league: team.league,
-    thumbnail_url: team.thumbnail_url || null,
+    thumbnail_url: getTeamLogoUrl(team.id),
   }))
 
   // Group by league

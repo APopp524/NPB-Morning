@@ -36,9 +36,6 @@ export async function upsertTeam(input: TeamInput): Promise<Team> {
     league: data.league,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
-    thumbnailUrl: data.thumbnail_url || null,
-    thumbnailSource: data.thumbnail_source || null,
-    thumbnailUpdatedAt: data.thumbnail_updated_at ? new Date(data.thumbnail_updated_at) : null,
   };
 }
 
@@ -72,9 +69,6 @@ export async function getTeams(): Promise<Team[]> {
     league: row.league,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
-    thumbnailUrl: row.thumbnail_url || null,
-    thumbnailSource: row.thumbnail_source || null,
-    thumbnailUpdatedAt: row.thumbnail_updated_at ? new Date(row.thumbnail_updated_at) : null,
   }));
 }
 
@@ -111,9 +105,6 @@ export async function getFirstTeam(): Promise<Team | null> {
     league: data.league,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
-    thumbnailUrl: data.thumbnail_url || null,
-    thumbnailSource: data.thumbnail_source || null,
-    thumbnailUpdatedAt: data.thumbnail_updated_at ? new Date(data.thumbnail_updated_at) : null,
   };
 }
 

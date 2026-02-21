@@ -5,9 +5,6 @@ export interface Team {
   league: 'central' | 'pacific';
   createdAt: Date;
   updatedAt: Date;
-  thumbnailUrl?: string | null;
-  thumbnailSource?: string | null;
-  thumbnailUpdatedAt?: Date | null;
 }
 
 export interface TeamInput {
