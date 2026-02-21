@@ -195,6 +195,7 @@ function normalizeGames(
 
   return games.map((game) => ({
     date, // Already in ISO format (YYYY-MM-DD)
+    startTime: null,
     homeTeamId: normalizeTeamName(game.homeTeam),
     awayTeamId: normalizeTeamName(game.awayTeam),
     homeScore: game.homeScore ?? null,

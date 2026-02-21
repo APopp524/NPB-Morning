@@ -16,6 +16,7 @@ export const mockTeams: TeamInput[] = [
 export const mockGames: GameInput[] = [
   {
     date: '2024-01-15',
+    startTime: null,
     homeTeamId: 'yomiuri-giants',
     awayTeamId: 'hanshin-tigers',
     homeScore: 5,
@@ -24,6 +25,7 @@ export const mockGames: GameInput[] = [
   },
   {
     date: '2024-01-15',
+    startTime: null,
     homeTeamId: 'yomiuri-giants',
     awayTeamId: 'hanshin-tigers',
     homeScore: null,
