@@ -2,6 +2,8 @@
 
 **Your daily snapshot of Japanese baseball.**
 
+npb-morning.vercel.app
+
 NPB Morning is a web application that aggregates and presents daily information about Nippon Professional Baseball (NPB). It provides fans — especially English-speaking ones — with a quick, at-a-glance morning overview of what's happening across the league.
 
 ## What It Does
