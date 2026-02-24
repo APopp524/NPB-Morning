@@ -2,6 +2,9 @@ import { getTeams } from '@/src/lib/getTeams'
 import { TeamList } from '@/src/components/TeamList'
 import { PageHeader } from '@/src/components/PageHeader'
 
+// Teams are static seed data — cache aggressively
+export const revalidate = 3600
+
 export default async function TeamsPage() {
   let teamsData
 

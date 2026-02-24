@@ -4,43 +4,23 @@ import type { NewsArticle, NewsResponse } from '@/src/types/news'
 const PAGE_SIZE = 6
 const DAYS_BACK = 30
 
-/**
- * Get the cutoff date for news articles (30 days ago)
- */
-function getCutoffDate(): Date {
-  const cutoffDate = new Date()
-  cutoffDate.setDate(cutoffDate.getDate() - DAYS_BACK)
-  return cutoffDate
+const NEWS_COLUMNS =
+  'id, title, link, source_name, source_icon, thumbnail, thumbnail_small, published_at, fetched_at, team_id'
+
+function getCutoffISO(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - DAYS_BACK)
+  return d.toISOString()
 }
 
-/**
- * Fetch recent news articles from the database.
- * Filters by published_at (with fetched_at fallback for articles without a publish date).
- * Returns up to PAGE_SIZE articles from the last 30 days, plus info about whether more exist.
- * 
- * @returns NewsResponse with articles array, or null if no articles found
- */
 export async function getNews(): Promise<NewsResponse | null> {
   const supabase = getSupabaseClient()
-  const cutoffISO = getCutoffDate().toISOString()
+  const cutoff = getCutoffISO()
 
-  // Fetch one extra to check if there are more articles
-  // Filter: published_at >= cutoff, OR (published_at is null AND fetched_at >= cutoff)
   const { data, error } = await supabase
     .from('news_articles')
-    .select(`
-      id,
-      title,
-      link,
-      source_name,
-      source_icon,
-      thumbnail,
-      thumbnail_small,
-      published_at,
-      fetched_at,
-      team_id
-    `)
-    .or(`published_at.gte.${cutoffISO},and(published_at.is.null,fetched_at.gte.${cutoffISO})`)
+    .select(NEWS_COLUMNS)
+    .or(`published_at.gte.${cutoff},and(published_at.is.null,fetched_at.gte.${cutoff})`)
     .order('published_at', { ascending: false, nullsFirst: false })
     .limit(PAGE_SIZE + 1)
 
@@ -49,64 +29,28 @@ export async function getNews(): Promise<NewsResponse | null> {
     return null
   }
 
-  if (!data || data.length === 0) {
-    return null
-  }
+  if (!data || data.length === 0) return null
 
-  // Check if there are more articles beyond this page
   const hasMore = data.length > PAGE_SIZE
-  const articlesData = hasMore ? data.slice(0, PAGE_SIZE) : data
-
-  const articles: NewsArticle[] = articlesData.map((row) => ({
-    id: row.id,
-    title: row.title,
-    link: row.link,
-    source_name: row.source_name,
-    source_icon: row.source_icon,
-    thumbnail: row.thumbnail,
-    thumbnail_small: row.thumbnail_small,
-    published_at: row.published_at,
-    fetched_at: row.fetched_at,
-    team_id: row.team_id ?? null,
-  }))
-
-  // Get the most recent fetched_at for display
-  const latestFetchedAt = articles.length > 0 ? articles[0].fetched_at : null
+  const articles = (hasMore ? data.slice(0, PAGE_SIZE) : data) as NewsArticle[]
 
   return {
     articles,
-    fetched_at: latestFetchedAt,
+    fetched_at: articles[0]?.fetched_at ?? null,
     hasMore,
   }
 }
 
-/**
- * Fetch a specific page of news articles (client-side).
- * @param page Page number (0-indexed)
- * @returns NewsResponse with the page of articles
- */
 export async function getNewsPage(page: number): Promise<NewsResponse | null> {
   const supabase = getSupabaseClient()
-  const cutoffISO = getCutoffDate().toISOString()
+  const cutoff = getCutoffISO()
   const offset = page * PAGE_SIZE
 
-  // Fetch one extra to check if there are more articles
-  // Filter: published_at >= cutoff, OR (published_at is null AND fetched_at >= cutoff)
+  // .range() is inclusive on both ends, so fetch PAGE_SIZE+1 to detect hasMore
   const { data, error } = await supabase
     .from('news_articles')
-    .select(`
-      id,
-      title,
-      link,
-      source_name,
-      source_icon,
-      thumbnail,
-      thumbnail_small,
-      published_at,
-      fetched_at,
-      team_id
-    `)
-    .or(`published_at.gte.${cutoffISO},and(published_at.is.null,fetched_at.gte.${cutoffISO})`)
+    .select(NEWS_COLUMNS)
+    .or(`published_at.gte.${cutoff},and(published_at.is.null,fetched_at.gte.${cutoff})`)
     .order('published_at', { ascending: false, nullsFirst: false })
     .range(offset, offset + PAGE_SIZE)
 
@@ -116,33 +60,11 @@ export async function getNewsPage(page: number): Promise<NewsResponse | null> {
   }
 
   if (!data || data.length === 0) {
-    return {
-      articles: [],
-      fetched_at: null,
-      hasMore: false,
-    }
+    return { articles: [], fetched_at: null, hasMore: false }
   }
 
-  // Check if there are more articles beyond this page
   const hasMore = data.length > PAGE_SIZE
-  const articlesData = hasMore ? data.slice(0, PAGE_SIZE) : data
+  const articles = (hasMore ? data.slice(0, PAGE_SIZE) : data) as NewsArticle[]
 
-  const articles: NewsArticle[] = articlesData.map((row) => ({
-    id: row.id,
-    title: row.title,
-    link: row.link,
-    source_name: row.source_name,
-    source_icon: row.source_icon,
-    thumbnail: row.thumbnail,
-    thumbnail_small: row.thumbnail_small,
-    published_at: row.published_at,
-    fetched_at: row.fetched_at,
-    team_id: row.team_id ?? null,
-  }))
-
-  return {
-    articles,
-    fetched_at: null,
-    hasMore,
-  }
+  return { articles, fetched_at: null, hasMore }
 }

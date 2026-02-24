@@ -4,6 +4,9 @@ import { GamesSection } from '@/src/components/games/GamesSection'
 import { StandingsSnapshot } from '@/src/components/StandingsSnapshot'
 import { NewsSection } from '@/src/components/NewsSection'
 
+// ISR: regenerate at most every 60 seconds (data changes via cron, not user actions)
+export const revalidate = 60
+
 function formatTodayDate(): string {
   const today = new Date()
   return today.toLocaleDateString('en-US', {

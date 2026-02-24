@@ -2,6 +2,8 @@ import { getStandings } from '@/src/lib/getStandings'
 import { StandingsDisplay } from '@/src/components/StandingsDisplay'
 import { PageHeader } from '@/src/components/PageHeader'
 
+export const revalidate = 300
+
 export default async function StandingsPage() {
   let standingsData
 

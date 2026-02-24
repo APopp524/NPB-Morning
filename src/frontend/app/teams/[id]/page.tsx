@@ -8,6 +8,8 @@ import { TeamInfo } from '@/src/components/team-detail/TeamInfo'
 import { TeamNews } from '@/src/components/team-detail/TeamNews'
 import { TeamVideos } from '@/src/components/team-detail/TeamVideos'
 
+export const revalidate = 300
+
 interface TeamPageProps {
   params: Promise<{ id: string }>
 }
@@ -15,18 +17,18 @@ interface TeamPageProps {
 export default async function TeamDetailPage({ params }: TeamPageProps) {
   const { id } = await params
 
-  let team
-  try {
-    team = await getTeam(id)
-  } catch {
+  // Fire all three queries in parallel — id from params === team.id
+  const [teamResult, newsResult, videosResult] = await Promise.allSettled([
+    getTeam(id),
+    getTeamNews(id),
+    getTeamVideos(id),
+  ])
+
+  if (teamResult.status === 'rejected') {
     notFound()
   }
 
-  const [newsResult, videosResult] = await Promise.allSettled([
-    getTeamNews(team.id),
-    getTeamVideos(team.id),
-  ])
-
+  const team = teamResult.value
   const news = newsResult.status === 'fulfilled' ? newsResult.value : []
   const videos = videosResult.status === 'fulfilled' ? videosResult.value : []
 
