@@ -22,15 +22,6 @@ NPB Morning is a web application that aggregates and presents daily information 
   - YouTube RSS feeds — team channel videos (no API key required)
 - **Scheduling**: GitHub Actions (nightly cron jobs)
 
-## Cron Jobs
-
-| Script | Command | Data Source | Schedule |
-|--------|---------|-------------|----------|
-| Games | `npm run games:run` | SerpApi | Nightly |
-| Standings | `npm run standings:run` | SerpApi | Nightly |
-| News | `npm run news:run` | SerpApi (Google News) | Nightly |
-| Videos | `npm run videos:run` | YouTube RSS feeds | Nightly |
-
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
