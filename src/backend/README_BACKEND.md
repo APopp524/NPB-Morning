@@ -33,8 +33,10 @@ Fill in your Supabase credentials:
 3. Run database migrations:
    - Run `supabase/migrations/001_initial_schema.sql` to create tables
    - Run `supabase/migrations/002_seed_teams.sql` to seed the 12 NPB teams
+   - Run all subsequent migrations through `014_add_compound_indexes.sql`
    
    Teams are static configuration data seeded via migration. They are never fetched or updated at runtime.
+   Migration 014 adds compound indexes that match the frontend's most common query patterns for optimal read performance.
 
 5. Start the server:
 ```bash
@@ -436,6 +438,6 @@ src/
     run-videos.ts       # Videos cron runner
   __tests__/            # Test files and fixtures
 supabase/
-  migrations/           # Database migrations (001–013)
+  migrations/           # Database migrations (001–014)
 ```
 
