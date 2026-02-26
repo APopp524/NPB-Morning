@@ -6,6 +6,7 @@ interface TeamIdentityProps {
   name: string
   thumbnailUrl?: string | null
   size?: 20 | 24 | 32
+  truncate?: boolean
 }
 
 const sizeClasses = {
@@ -18,6 +19,7 @@ export function TeamIdentity({
   name,
   thumbnailUrl,
   size = 24,
+  truncate: shouldTruncate = false,
 }: TeamIdentityProps) {
   const [imageError, setImageError] = useState(false)
   
@@ -29,7 +31,7 @@ export function TeamIdentity({
   const sizeClass = sizeClasses[size]
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={`flex items-center gap-2${shouldTruncate ? ' min-w-0' : ''}`}>
       {shouldShowImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -45,7 +47,7 @@ export function TeamIdentity({
           {name.charAt(0)}
         </div>
       )}
-      <span className="text-gray-900">{name}</span>
+      <span className={`text-gray-900${shouldTruncate ? ' truncate' : ''}`}>{name}</span>
     </div>
   )
 }

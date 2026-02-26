@@ -39,17 +39,18 @@ export function StandingsSnapshot({ central, pacific }: StandingsSnapshotProps) 
                 key={standing.id}
                 className="flex items-center justify-between py-1.5"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-500 w-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="text-sm font-medium text-gray-500 w-4 flex-shrink-0">
                     {index + 1}
                   </span>
                   <TeamIdentity
                     name={standing.team.name_en}
                     thumbnailUrl={standing.team.thumbnail_url}
                     size={20}
+                    truncate
                   />
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-4 text-sm text-gray-600 flex-shrink-0 ml-3">
                   <span>{standing.wins}-{standing.losses}</span>
                   <span className="w-8 text-right">{formatGamesBack(standing.games_back)}</span>
                 </div>
@@ -69,17 +70,18 @@ export function StandingsSnapshot({ central, pacific }: StandingsSnapshotProps) 
                 key={standing.id}
                 className="flex items-center justify-between py-1.5"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-500 w-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="text-sm font-medium text-gray-500 w-4 flex-shrink-0">
                     {index + 1}
                   </span>
                   <TeamIdentity
                     name={standing.team.name_en}
                     thumbnailUrl={standing.team.thumbnail_url}
                     size={20}
+                    truncate
                   />
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-4 text-sm text-gray-600 flex-shrink-0 ml-3">
                   <span>{standing.wins}-{standing.losses}</span>
                   <span className="w-8 text-right">{formatGamesBack(standing.games_back)}</span>
                 </div>
