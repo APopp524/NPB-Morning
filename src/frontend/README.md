@@ -18,6 +18,7 @@ cp .env.local.example .env.local
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+REVALIDATE_SECRET=your_secret_token
 ```
 
 4. Run the development server:
@@ -39,6 +40,7 @@ The frontend is optimized for fast page loads with minimal database round trips:
   - Standings page: `revalidate = 300` (5 minutes)
   - Teams list: `revalidate = 3600` (1 hour)
   - Team detail: `revalidate = 300` (5 minutes)
+- **On-demand revalidation** — a protected `POST /api/revalidate?token=<secret>` endpoint busts the entire ISR cache (`revalidatePath('/', 'layout')`). All four nightly GitHub Actions workflows call this endpoint after data ingestion so users always see fresh data on their first visit after a cron run. Requires `REVALIDATE_SECRET` and `VERCEL_URL` set as GitHub Actions secrets.
 
 ## Project Structure
 
@@ -48,6 +50,7 @@ app/
   standings/page.tsx          # Full standings page
   teams/page.tsx              # Teams list
   teams/[id]/page.tsx         # Team detail page
+  api/revalidate/route.ts     # On-demand ISR cache bust endpoint
 src/
   components/
     games/

@@ -331,6 +331,7 @@ Standings ingestion runs automatically via GitHub Actions on a nightly schedule.
 3. Dependencies are installed with `npm ci`
 4. The `npm run standings:run` script is executed
 5. Secrets are injected as environment variables (managed in GitHub, not `.env`)
+6. After successful ingestion, a `POST /api/revalidate` call is made to the Vercel deployment to bust the ISR cache so users see fresh data immediately (non-fatal if it fails)
 
 **Idempotency:**
 The job is **idempotent and safe to re-run**. It uses database upserts keyed by `(team_id, season)`, so:
@@ -354,6 +355,8 @@ Secrets are managed in GitHub, not in `.env` files:
   - `SERPAPI_KEY`: Your SerpApi API key
   - `SUPABASE_URL`: Your Supabase project URL
   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (preferred for writes)
+  - `VERCEL_URL`: Your Vercel deployment URL (e.g. `https://your-app.vercel.app`) — used by the revalidation step
+  - `REVALIDATE_SECRET`: Secret token that matches `REVALIDATE_SECRET` in your Vercel environment — used to authenticate the cache bust call
 
 **What NOT to do:**
 - ❌ Do NOT use system crontab (use GitHub Actions instead)
@@ -379,6 +382,7 @@ The cron job fails fast with clear error messages:
 - ✅ No locking required (idempotency eliminates race conditions)
 - ✅ No retries needed (fail fast, let cron retry on next run)
 - ✅ Single source of truth (all logic in shared backend modules)
+- ✅ On-demand cache revalidation after each ingestion (non-fatal if it fails)
 
 ## Testing
 
