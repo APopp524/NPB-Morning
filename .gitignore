@@ -5,3 +5,5 @@ dist/
 .DS_Store
 standings.json
 
+.vercel
+.env*.local
