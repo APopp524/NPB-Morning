@@ -28,3 +28,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      - name: Revalidate Vercel cache
+        run: |
+          curl -sf -X POST "${{ secrets.VERCEL_URL }}/api/revalidate?token=${{ secrets.REVALIDATE_SECRET }}" \
+            || echo "Cache revalidation failed (non-fatal)"
+
