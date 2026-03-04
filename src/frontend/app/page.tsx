@@ -4,8 +4,8 @@ import { GamesSection } from '@/src/components/games/GamesSection'
 import { StandingsSnapshot } from '@/src/components/StandingsSnapshot'
 import { NewsSection } from '@/src/components/NewsSection'
 
-// ISR: regenerate at most every 60 seconds (data changes via cron, not user actions)
-export const revalidate = 60
+// SSR: always render fresh — ISR stale-while-revalidate caused stale data on first load
+export const dynamic = 'force-dynamic'
 
 function formatTodayDate(): string {
   const today = new Date()
